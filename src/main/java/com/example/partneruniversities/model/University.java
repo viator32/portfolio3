@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import org.springframework.hateoas.RepresentationModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -19,13 +20,13 @@ public class University extends RepresentationModel<University> {
     private String departmentName;
     private String departmentUrl;
     private String contactPerson;
-    private int maxOutgoingStudents;
     private int maxIncomingStudents;
+    private int maxOutgoingStudents;
     private String nextSpringSemesterStart;
     private String nextAutumnSemesterStart;
 
     @OneToMany(mappedBy = "university", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Module> modules;
+    private List<Module> modules = new ArrayList<>();
 
     // Getters and Setters
 

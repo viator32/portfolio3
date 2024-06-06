@@ -1,11 +1,7 @@
 package com.example.partneruniversities.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import org.springframework.hateoas.RepresentationModel;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -21,6 +17,7 @@ public class Module extends RepresentationModel<Module> {
     private int creditPoints;
 
     @ManyToOne
+    @JoinColumn(name = "university_id")
     private University university;
 
     // Getters and Setters

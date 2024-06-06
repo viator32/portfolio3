@@ -1,7 +1,9 @@
 package com.example.partneruniversities.controller;
 
 import com.example.partneruniversities.assembler.UniversityModelAssembler;
+import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
+import com.example.partneruniversities.service.ModuleService;
 import com.example.partneruniversities.service.UniversityService;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -22,10 +24,12 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 public class UniversityController {
 
     private final UniversityService universityService;
+    private final ModuleService moduleService;
     private final UniversityModelAssembler assembler;
 
-    public UniversityController(UniversityService universityService, UniversityModelAssembler assembler) {
+    public UniversityController(UniversityService universityService, ModuleService moduleService, UniversityModelAssembler assembler) {
         this.universityService = universityService;
+        this.moduleService = moduleService;
         this.assembler = assembler;
     }
 
@@ -54,6 +58,12 @@ public class UniversityController {
         University university = universityService.findById(id)
                 .orElseThrow(() -> new RuntimeException("University not found"));
         return ResponseEntity.ok(assembler.toModel(university));
+    }
+
+    @GetMapping("/{universityId}/modules")
+    public ResponseEntity<List<Module>> getModulesByUniversityId(@PathVariable Long universityId) {
+        List<Module> modules = moduleService.findByUniversityId(universityId);
+        return ResponseEntity.ok(modules);
     }
 
     /**
@@ -90,11 +100,24 @@ public class UniversityController {
                     university.setMaxIncomingStudents(universityDetails.getMaxIncomingStudents());
                     university.setNextSpringSemesterStart(universityDetails.getNextSpringSemesterStart());
                     university.setNextAutumnSemesterStart(universityDetails.getNextAutumnSemesterStart());
-                    university.setModules(universityDetails.getModules());
+
+                    // Handle modules association
+                    if (universityDetails.getModules() != null) {
+                        university.getModules().clear();
+                        university.getModules().addAll(universityDetails.getModules());
+                        for (Module module : university.getModules()) {
+                            module.setUniversity(university);
+                        }
+                    }
                     return universityService.save(university);
                 })
                 .orElseGet(() -> {
                     universityDetails.setId(id);
+                    if (universityDetails.getModules() != null) {
+                        for (Module module : universityDetails.getModules()) {
+                            module.setUniversity(universityDetails);
+                        }
+                    }
                     return universityService.save(universityDetails);
                 });
 
@@ -110,6 +133,7 @@ public class UniversityController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUniversity(@PathVariable Long id) {
+        moduleService.deleteModulesByUniversityId(id);
         universityService.deleteById(id);
         return ResponseEntity.noContent().build();
     }

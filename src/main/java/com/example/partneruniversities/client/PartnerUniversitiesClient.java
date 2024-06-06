@@ -3,14 +3,17 @@ package com.example.partneruniversities.client;
 import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -22,8 +25,10 @@ public class PartnerUniversitiesClient {
     private Traverson traverson;
     private RestTemplate restTemplate;
     private ObjectMapper objectMapper;
+    private int port;
 
     public void setPort(int port) {
+        this.port = port;
         String baseUrl = "http://localhost:" + port + "/";
         this.traverson = new Traverson(URI.create(baseUrl), MediaTypes.HAL_JSON);
         this.restTemplate = new RestTemplate();
@@ -46,6 +51,8 @@ public class PartnerUniversitiesClient {
             University university = objectMapper.convertValue(response, University.class);
             String selfLink = ((Map<String, String>) ((Map<String, Object>) response.get("_links")).get("self")).get("href");
             return EntityModel.of(university, Link.of(selfLink, "self"));
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new RuntimeException("Failed to get university by ID " + id + ": " + e.getStatusCode() + " : " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get university by ID " + id + ": " + e.getMessage(), e);
         }
@@ -68,16 +75,38 @@ public class PartnerUniversitiesClient {
             EntityModel<University> entityModel = getUniversityById(id);
             Link link = entityModel.getLink("self").orElseThrow(() -> new RuntimeException("University self link not found"));
             restTemplate.put(link.expand().getHref(), university);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new RuntimeException("Failed to update university with ID " + id + ": " + e.getStatusCode() + " : " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             throw new RuntimeException("Failed to update university with ID " + id + ": " + e.getMessage(), e);
         }
     }
 
+    public CollectionModel<EntityModel<Module>> getModulesByUniversityId(Long universityId) {
+        try {
+            String modulesUri = "http://localhost:" + port + "/universities/" + universityId + "/modules";
+            ParameterizedTypeReference<CollectionModel<EntityModel<Module>>> responseType = new ParameterizedTypeReference<>() {};
+            return restTemplate.exchange(modulesUri, HttpMethod.GET, null, responseType).getBody();
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new RuntimeException("Failed to get modules by university ID " + universityId + ": " + e.getStatusCode() + " : " + e.getResponseBodyAsString(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get modules by university ID " + universityId + ": " + e.getMessage(), e);
+        }
+    }
+
     public void deleteUniversity(Long id) {
         try {
+            CollectionModel<EntityModel<Module>> modules = getModulesByUniversityId(id);
+            for (EntityModel<Module> module : modules) {
+                Link link = module.getLink("self").orElseThrow(() -> new RuntimeException("Module self link not found"));
+                restTemplate.delete(link.expand().getHref());
+            }
+
             EntityModel<University> entityModel = getUniversityById(id);
             Link link = entityModel.getLink("self").orElseThrow(() -> new RuntimeException("University self link not found"));
             restTemplate.delete(link.expand().getHref());
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new RuntimeException("Failed to delete university with ID " + id + ": " + e.getStatusCode() + " : " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete university with ID " + id + ": " + e.getMessage(), e);
         }
@@ -121,6 +150,8 @@ public class PartnerUniversitiesClient {
             EntityModel<Module> entityModel = getModuleById(id);
             Link link = entityModel.getLink("self").orElseThrow(() -> new RuntimeException("Module self link not found"));
             restTemplate.put(link.expand().getHref(), module);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new RuntimeException("Failed to update module with ID " + id + ": " + e.getStatusCode() + " : " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             throw new RuntimeException("Failed to update module with ID " + id + ": " + e.getMessage(), e);
         }

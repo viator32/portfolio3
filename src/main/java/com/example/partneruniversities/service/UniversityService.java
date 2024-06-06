@@ -1,5 +1,6 @@
 package com.example.partneruniversities.service;
 
+import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
 import com.example.partneruniversities.repository.UniversityRepository;
 import org.springframework.stereotype.Service;
@@ -27,13 +28,23 @@ public class UniversityService {
         return universityRepository.findById(id);
     }
 
+    @Transactional
     public University save(University university) {
+        // Ensure all modules are properly linked to the university
+        for (Module module : university.getModules()) {
+            module.setUniversity(university);
+        }
         return universityRepository.save(university);
     }
 
     @Transactional
     public void deleteById(Long id) {
-        moduleService.deleteByUniversityId(id);
+        // Delete associated modules first to avoid constraint violations
+        moduleService.deleteModulesByUniversityId(id);
         universityRepository.deleteById(id);
+    }
+
+    public List<Module> getModulesByUniversityId(Long universityId) {
+        return moduleService.findByUniversityId(universityId);
     }
 }
