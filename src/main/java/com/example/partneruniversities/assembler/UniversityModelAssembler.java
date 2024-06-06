@@ -21,7 +21,7 @@ public class UniversityModelAssembler implements RepresentationModelAssembler<Un
         // Create the self link for the university
         EntityModel<University> universityModel = EntityModel.of(university,
                 linkTo(methodOn(UniversityController.class).getUniversityById(university.getId())).withSelfRel(),
-                linkTo(methodOn(UniversityController.class).getAllUniversities(null, null)).withRel("universities"));
+                linkTo(methodOn(UniversityController.class).getAllUniversities()).withRel("universities"));
 
         // Add the department URL as a link
         universityModel.add(Link.of(university.getDepartmentUrl(), "departmentUrl"));
@@ -35,7 +35,7 @@ public class UniversityModelAssembler implements RepresentationModelAssembler<Un
         CollectionModel<EntityModel<University>> universityModels = RepresentationModelAssembler.super.toCollectionModel(entities);
 
         // Add a self link to the collection model
-        universityModels.add(linkTo(methodOn(UniversityController.class).getAllUniversities(null, null)).withSelfRel());
+        universityModels.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
 
         return universityModels;
     }

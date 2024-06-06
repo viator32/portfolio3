@@ -4,6 +4,9 @@ import com.example.partneruniversities.client.PartnerUniversitiesClient;
 import com.example.partneruniversities.model.University;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.hateoas.CollectionModel;
@@ -11,9 +14,11 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@TestMethodOrder(OrderAnnotation.class)
 public class UniversityControllerTest {
 
     @Autowired
@@ -25,13 +30,7 @@ public class UniversityControllerTest {
     }
 
     @Test
-    public void testGetAllUniversities() {
-        CollectionModel<EntityModel<University>> response = client.getAllUniversities();
-        assertThat(response).isNotNull();
-        assertThat(response.getContent()).isNotEmpty();
-    }
-
-    @Test
+    @Order(1)
     public void testCreateUniversity() {
         University university = new University();
         university.setName("Test University");
@@ -50,6 +49,42 @@ public class UniversityControllerTest {
     }
 
     @Test
+    @Order(2)
+    public void testCreateUniversity2() {
+        University university = new University();
+        university.setName("Test University 2");
+        university.setCountry("Test Country 2");
+        university.setDepartmentName("Test Department 2");
+        university.setDepartmentUrl("http://test2.com");
+        university.setContactPerson("Dr. Test 2");
+        university.setMaxOutgoingStudents(10);
+        university.setMaxIncomingStudents(8);
+        university.setNextSpringSemesterStart("2025-02-01");
+        university.setNextAutumnSemesterStart("2024-10-01");
+
+        EntityModel<University> response = client.createUniversity(university);
+        assertThat(response).isNotNull();
+        assertThat(response.getContent().getName()).isEqualTo("Test University 2");
+    }
+
+    @Test
+    @Order(3)
+    public void testGetAllUniversities() {
+        CollectionModel<EntityModel<University>> response = client.getAllUniversities();
+        assertThat(response).isNotNull();
+        assertThat(response.getContent()).isNotEmpty();
+    }
+
+    @Test
+    @Order(4)
+    public void testGetUniversityById() {
+        EntityModel<University> response = client.getUniversityById(1L);
+        assertThat(response).isNotNull();
+        assertThat(response.getContent().getName()).isEqualTo("Stanford University");
+    }
+
+    @Test
+    @Order(5)
     public void testUpdateUniversity() {
         University university = client.getUniversityById(1L).getContent();
         assertThat(university).isNotNull();
@@ -62,16 +97,20 @@ public class UniversityControllerTest {
     }
 
     @Test
+    @Order(6)
     public void testDeleteUniversity() {
-        client.deleteUniversity(1L);
-        EntityModel<University> response = client.getUniversityById(1L);
-        assertThat(response).isNull();
-    }
+        // First, ensure the university exists
+        EntityModel<University> university = client.getUniversityById(1L);
+        assertThat(university).isNotNull();
 
-    @Test
-    public void testGetUniversityById() {
-        EntityModel<University> response = client.getUniversityById(2L);
-        assertThat(response).isNotNull();
-        assertThat(response.getContent().getName()).isEqualTo("Stanford University");
+        // Perform delete operation
+        client.deleteUniversity(1L);
+
+        // Verify the university has been deleted by checking for an exception or null response
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            client.getUniversityById(1L);
+        });
+
+        assertThat(exception.getMessage()).contains("Failed to get university by ID 1");
     }
 }

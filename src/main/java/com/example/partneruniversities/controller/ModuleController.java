@@ -1,17 +1,19 @@
 package com.example.partneruniversities.controller;
 
-import com.example.partneruniversities.assembler.ModuleModelAssembler;
 import com.example.partneruniversities.model.Module;
+import com.example.partneruniversities.repository.ModuleRepository;
 import com.example.partneruniversities.service.ModuleService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 /**
  * REST controller for managing Module entities.
@@ -21,25 +23,26 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @RequestMapping("/modules")
 public class ModuleController {
 
-    private final ModuleService moduleService;
-    private final ModuleModelAssembler assembler;
+    private final ModuleRepository moduleRepository;
 
-    public ModuleController(ModuleService moduleService, ModuleModelAssembler assembler) {
-        this.moduleService = moduleService;
-        this.assembler = assembler;
+    public ModuleController(ModuleRepository moduleRepository) {
+        this.moduleRepository = moduleRepository;
     }
 
     /**
-     * GET /modules : Get all modules with pagination.
+     * GET /modules : Get all modules.
      *
-     * @param pageable        pagination information
-     * @param pagedAssembler  assembler for pagination
-     * @return PagedModel of modules
+     * @return the CollectionModel of modules
      */
     @GetMapping
-    public PagedModel<EntityModel<Module>> getAllModules(Pageable pageable, PagedResourcesAssembler<Module> pagedAssembler) {
-        Page<Module> modules = moduleService.findAll(pageable);
-        return pagedAssembler.toModel(modules, assembler);
+    public CollectionModel<EntityModel<Module>> getAllModules() {
+        List<EntityModel<Module>> modules = moduleRepository.findAll().stream()
+                .map(module -> EntityModel.of(module,
+                        WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getModuleById(module.getId())).withSelfRel(),
+                        WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")))
+                .collect(Collectors.toList());
+
+        return CollectionModel.of(modules, WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withSelfRel());
     }
 
     /**
@@ -50,23 +53,29 @@ public class ModuleController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<Module>> getModuleById(@PathVariable Long id) {
-        Module module = moduleService.findById(id);
-        return module != null
-                ? ResponseEntity.ok(assembler.toModel(module))
-                : ResponseEntity.notFound().build();
+        Module module = moduleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Module not found"));
+
+        return ResponseEntity.ok(EntityModel.of(module,
+                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getModuleById(id)).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")));
     }
 
     /**
      * POST /modules : Create a new module.
      *
      * @param module the module to create
-     * @return the ResponseEntity with status 201 (Created) and with body the new module, or with status 400 (Bad Request) if the module has already an ID
+     * @return the ResponseEntity with status 201 (Created) and with body the new module
      */
     @PostMapping
     public ResponseEntity<EntityModel<Module>> createModule(@RequestBody Module module) {
-        Module savedModule = moduleService.save(module);
-        return ResponseEntity.created(linkTo(methodOn(ModuleController.class).getModuleById(savedModule.getId())).toUri())
-                .body(assembler.toModel(savedModule));
+        Module savedModule = moduleRepository.save(module);
+        EntityModel<Module> entityModel = EntityModel.of(savedModule,
+                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getModuleById(savedModule.getId())).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
+
+        return ResponseEntity.created(entityModel.getRequiredLink("self").toUri())
+                .body(entityModel);
     }
 
     /**
@@ -78,10 +87,24 @@ public class ModuleController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<EntityModel<Module>> updateModule(@PathVariable Long id, @RequestBody Module moduleDetails) {
-        Module updatedModule = moduleService.update(id, moduleDetails);
-        return updatedModule != null
-                ? ResponseEntity.ok(assembler.toModel(updatedModule))
-                : ResponseEntity.notFound().build();
+        Module updatedModule = moduleRepository.findById(id)
+                .map(module -> {
+                    module.setName(moduleDetails.getName());
+                    module.setSemester(moduleDetails.getSemester());
+                    module.setCreditPoints(moduleDetails.getCreditPoints());
+                    module.setUniversity(moduleDetails.getUniversity());
+                    return moduleRepository.save(module);
+                })
+                .orElseGet(() -> {
+                    moduleDetails.setId(id);
+                    return moduleRepository.save(moduleDetails);
+                });
+
+        EntityModel<Module> entityModel = EntityModel.of(updatedModule,
+                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getModuleById(updatedModule.getId())).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
+
+        return ResponseEntity.ok(entityModel);
     }
 
     /**
@@ -92,7 +115,7 @@ public class ModuleController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteModule(@PathVariable Long id) {
-        moduleService.deleteById(id);
+        moduleRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -3,13 +3,13 @@ package com.example.partneruniversities.controller;
 import com.example.partneruniversities.assembler.UniversityModelAssembler;
 import com.example.partneruniversities.model.University;
 import com.example.partneruniversities.service.UniversityService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
@@ -30,16 +30,17 @@ public class UniversityController {
     }
 
     /**
-     * GET /universities : Get all universities with pagination.
+     * GET /universities : Get all universities.
      *
-     * @param pageable        pagination information
-     * @param pagedAssembler  assembler for pagination
-     * @return PagedModel of universities
+     * @return the CollectionModel of universities
      */
     @GetMapping
-    public PagedModel<EntityModel<University>> getAllUniversities(Pageable pageable, PagedResourcesAssembler<University> pagedAssembler) {
-        Page<University> universities = universityService.findAll(pageable);
-        return pagedAssembler.toModel(universities, assembler);
+    public CollectionModel<EntityModel<University>> getAllUniversities() {
+        List<EntityModel<University>> universities = universityService.findAll().stream()
+                .map(assembler::toModel)
+                .collect(Collectors.toList());
+
+        return CollectionModel.of(universities, linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
     }
 
     /**
@@ -50,23 +51,23 @@ public class UniversityController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<University>> getUniversityById(@PathVariable Long id) {
-        University university = universityService.findById(id);
-        return university != null
-                ? ResponseEntity.ok(assembler.toModel(university))
-                : ResponseEntity.notFound().build();
+        University university = universityService.findById(id)
+                .orElseThrow(() -> new RuntimeException("University not found"));
+        return ResponseEntity.ok(assembler.toModel(university));
     }
 
     /**
      * POST /universities : Create a new university.
      *
      * @param university the university to create
-     * @return the ResponseEntity with status 201 (Created) and with body the new university, or with status 400 (Bad Request) if the university has already an ID
+     * @return the ResponseEntity with status 201 (Created) and with body the new university
      */
     @PostMapping
     public ResponseEntity<EntityModel<University>> createUniversity(@RequestBody University university) {
         University savedUniversity = universityService.save(university);
-        return ResponseEntity.created(linkTo(methodOn(UniversityController.class).getUniversityById(savedUniversity.getId())).toUri())
-                .body(assembler.toModel(savedUniversity));
+        EntityModel<University> entityModel = assembler.toModel(savedUniversity);
+        return ResponseEntity.created(entityModel.getRequiredLink("self").toUri())
+                .body(entityModel);
     }
 
     /**
@@ -78,10 +79,27 @@ public class UniversityController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<EntityModel<University>> updateUniversity(@PathVariable Long id, @RequestBody University universityDetails) {
-        University updatedUniversity = universityService.update(id, universityDetails);
-        return updatedUniversity != null
-                ? ResponseEntity.ok(assembler.toModel(updatedUniversity))
-                : ResponseEntity.notFound().build();
+        University updatedUniversity = universityService.findById(id)
+                .map(university -> {
+                    university.setName(universityDetails.getName());
+                    university.setCountry(universityDetails.getCountry());
+                    university.setDepartmentName(universityDetails.getDepartmentName());
+                    university.setDepartmentUrl(universityDetails.getDepartmentUrl());
+                    university.setContactPerson(universityDetails.getContactPerson());
+                    university.setMaxOutgoingStudents(universityDetails.getMaxOutgoingStudents());
+                    university.setMaxIncomingStudents(universityDetails.getMaxIncomingStudents());
+                    university.setNextSpringSemesterStart(universityDetails.getNextSpringSemesterStart());
+                    university.setNextAutumnSemesterStart(universityDetails.getNextAutumnSemesterStart());
+                    university.setModules(universityDetails.getModules());
+                    return universityService.save(university);
+                })
+                .orElseGet(() -> {
+                    universityDetails.setId(id);
+                    return universityService.save(universityDetails);
+                });
+
+        EntityModel<University> entityModel = assembler.toModel(updatedUniversity);
+        return ResponseEntity.ok(entityModel);
     }
 
     /**

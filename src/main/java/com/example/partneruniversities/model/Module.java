@@ -1,5 +1,6 @@
 package com.example.partneruniversities.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -7,10 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import org.springframework.hateoas.RepresentationModel;
 
-/**
- * Entity representing a Module.
- * This class includes information about a module offered at a partner university.
- */
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 public class Module extends RepresentationModel<Module> {
 

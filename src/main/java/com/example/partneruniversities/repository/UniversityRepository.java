@@ -2,10 +2,8 @@ package com.example.partneruniversities.repository;
 
 import com.example.partneruniversities.model.University;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-/**
- * Repository interface for University entities.
- * Extends JpaRepository to provide CRUD operations and pagination support.
- */
+@Repository
 public interface UniversityRepository extends JpaRepository<University, Long> {
 }

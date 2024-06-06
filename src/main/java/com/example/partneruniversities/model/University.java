@@ -1,18 +1,12 @@
 package com.example.partneruniversities.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import org.springframework.hateoas.RepresentationModel;
 
 import java.util.List;
 
-/**
- * Entity representing a University.
- * This class includes information about a partner university.
- */
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 public class University extends RepresentationModel<University> {
 
@@ -30,7 +24,7 @@ public class University extends RepresentationModel<University> {
     private String nextSpringSemesterStart;
     private String nextAutumnSemesterStart;
 
-    @OneToMany(mappedBy = "university")
+    @OneToMany(mappedBy = "university", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Module> modules;
 
     // Getters and Setters

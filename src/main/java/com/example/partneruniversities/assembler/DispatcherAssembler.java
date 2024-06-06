@@ -14,12 +14,12 @@ public class DispatcherAssembler {
 
     public RepresentationModel<?> createDispatcherLinks() {
         RepresentationModel<?> dispatcher = new RepresentationModel<>();
-        dispatcher.add(linkTo(methodOn(UniversityController.class).getAllUniversities(null, null)).withRel("universities"));
-        dispatcher.add(linkTo(methodOn(ModuleController.class).getAllModules(null, null)).withRel("modules"));
+        dispatcher.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withRel("universities"));
+        dispatcher.add(linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
         return dispatcher;
     }
 
     public EntityModel<?> createSelfLink() {
-        return EntityModel.of(new Object(), linkTo(methodOn(UniversityController.class).getAllUniversities(null, null)).withSelfRel());
+        return EntityModel.of(new Object(), linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
     }
 }

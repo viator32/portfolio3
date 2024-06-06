@@ -15,8 +15,8 @@ public class DispatcherController {
     public RepresentationModel<?> getDispatcherLinks() {
         RepresentationModel<?> model = new RepresentationModel<>();
 
-        model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UniversityController.class).getAllUniversities(null, null)).withRel("universities"));
-        model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ModuleController.class).getAllModules(null, null)).withRel("modules"));
+        model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UniversityController.class).getAllUniversities()).withRel("universities"));
+        model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ModuleController.class).getAllModules()).withRel("modules"));
 
         return model;
     }

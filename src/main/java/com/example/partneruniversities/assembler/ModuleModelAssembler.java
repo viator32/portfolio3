@@ -16,14 +16,12 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @Component
 public class ModuleModelAssembler implements RepresentationModelAssembler<Module, EntityModel<Module>> {
 
+
     @Override
     public EntityModel<Module> toModel(Module module) {
-        // Create the self link for the module
-        EntityModel<Module> moduleModel = EntityModel.of(module,
+        return EntityModel.of(module,
                 linkTo(methodOn(ModuleController.class).getModuleById(module.getId())).withSelfRel(),
-                linkTo(methodOn(ModuleController.class).getAllModules(null, null)).withRel("modules"));
-
-        return moduleModel;
+                linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
     }
 
     @Override
@@ -32,7 +30,7 @@ public class ModuleModelAssembler implements RepresentationModelAssembler<Module
         CollectionModel<EntityModel<Module>> moduleModels = RepresentationModelAssembler.super.toCollectionModel(entities);
 
         // Add a self link to the collection model
-        moduleModels.add(linkTo(methodOn(ModuleController.class).getAllModules(null, null)).withSelfRel());
+        moduleModels.add(linkTo(methodOn(ModuleController.class).getAllModules()).withSelfRel());
 
         return moduleModels;
     }

@@ -10,6 +10,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -42,7 +43,9 @@ public class PartnerUniversitiesClient {
         try {
             Link link = traverson.follow("universities").asLink();
             Map<String, Object> response = restTemplate.getForObject(link.expand().getHref() + "/" + id, Map.class);
-            return EntityModel.of(objectMapper.convertValue(response, University.class));
+            University university = objectMapper.convertValue(response, University.class);
+            String selfLink = ((Map<String, String>) ((Map<String, Object>) response.get("_links")).get("self")).get("href");
+            return EntityModel.of(university, Link.of(selfLink, "self"));
         } catch (Exception e) {
             throw new RuntimeException("Failed to get university by ID " + id + ": " + e.getMessage(), e);
         }
@@ -52,7 +55,9 @@ public class PartnerUniversitiesClient {
         try {
             Link link = traverson.follow("universities").asLink();
             Map<String, Object> response = restTemplate.postForObject(link.expand().getHref(), university, Map.class);
-            return EntityModel.of(objectMapper.convertValue(response, University.class));
+            University createdUniversity = objectMapper.convertValue(response, University.class);
+            String selfLink = ((Map<String, String>) ((Map<String, Object>) response.get("_links")).get("self")).get("href");
+            return EntityModel.of(createdUniversity, Link.of(selfLink, "self"));
         } catch (Exception e) {
             throw new RuntimeException("Failed to create university: " + e.getMessage(), e);
         }
@@ -91,7 +96,9 @@ public class PartnerUniversitiesClient {
         try {
             Link link = traverson.follow("modules").asLink();
             Map<String, Object> response = restTemplate.getForObject(link.expand().getHref() + "/" + id, Map.class);
-            return EntityModel.of(objectMapper.convertValue(response, Module.class));
+            Module module = objectMapper.convertValue(response, Module.class);
+            String selfLink = ((Map<String, String>) ((Map<String, Object>) response.get("_links")).get("self")).get("href");
+            return EntityModel.of(module, Link.of(selfLink, "self"));
         } catch (Exception e) {
             throw new RuntimeException("Failed to get module by ID " + id + ": " + e.getMessage(), e);
         }
@@ -101,7 +108,9 @@ public class PartnerUniversitiesClient {
         try {
             Link link = traverson.follow("modules").asLink();
             Map<String, Object> response = restTemplate.postForObject(link.expand().getHref(), module, Map.class);
-            return EntityModel.of(objectMapper.convertValue(response, Module.class));
+            Module createdModule = objectMapper.convertValue(response, Module.class);
+            String selfLink = ((Map<String, String>) ((Map<String, Object>) response.get("_links")).get("self")).get("href");
+            return EntityModel.of(createdModule, Link.of(selfLink, "self"));
         } catch (Exception e) {
             throw new RuntimeException("Failed to create module: " + e.getMessage(), e);
         }
