@@ -16,7 +16,7 @@ public class ModuleService {
         this.moduleRepository = moduleRepository;
     }
 
-    public List<Module> findByUniversityId(Long universityId) {
+    public List<Module> getModulesByUniversityId(Long universityId) {
         return moduleRepository.findByUniversityId(universityId);
     }
 

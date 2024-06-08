@@ -5,8 +5,9 @@ import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
 import com.example.partneruniversities.service.ModuleService;
 import com.example.partneruniversities.service.UniversityService;
-import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,62 +34,60 @@ public class UniversityController {
         this.assembler = assembler;
     }
 
-    /**
-     * GET /universities : Get all universities.
-     *
-     * @return the CollectionModel of universities
-     */
     @GetMapping
-    public CollectionModel<EntityModel<University>> getAllUniversities() {
+    public ResponseEntity<?> getAllUniversities() {
         List<EntityModel<University>> universities = universityService.findAll().stream()
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
 
-        return CollectionModel.of(universities, linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel().getHref());
+
+        return ResponseEntity.ok().headers(headers).body(universities);
     }
 
-    /**
-     * GET /universities/{id} : Get a university by ID.
-     *
-     * @param id the ID of the university to retrieve
-     * @return the ResponseEntity with status 200 (OK) and with body the university, or with status 404 (Not Found)
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<University>> getUniversityById(@PathVariable Long id) {
+    public ResponseEntity<?> getUniversityById(@PathVariable Long id) {
         University university = universityService.findById(id)
                 .orElseThrow(() -> new RuntimeException("University not found"));
-        return ResponseEntity.ok(assembler.toModel(university));
+
+        EntityModel<University> universityModel = assembler.toModel(university);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", universityModel.getLink("self").orElseThrow().getHref());
+        headers.add("update", linkTo(methodOn(UniversityController.class).updateUniversity(id, university)).withRel("update").getHref());
+        headers.add("delete", linkTo(methodOn(UniversityController.class).deleteUniversity(id)).withRel("delete").getHref());
+
+        return ResponseEntity.ok().headers(headers).body(universityModel);
     }
 
     @GetMapping("/{universityId}/modules")
-    public ResponseEntity<List<Module>> getModulesByUniversityId(@PathVariable Long universityId) {
-        List<Module> modules = moduleService.findByUniversityId(universityId);
-        return ResponseEntity.ok(modules);
+    public ResponseEntity<?> getModulesByUniversityId(@PathVariable Long universityId) {
+        List<Module> modules = moduleService.getModulesByUniversityId(universityId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", linkTo(methodOn(UniversityController.class).getModulesByUniversityId(universityId)).withSelfRel().getHref());
+
+        return ResponseEntity.ok().headers(headers).body(modules);
     }
 
-    /**
-     * POST /universities : Create a new university.
-     *
-     * @param university the university to create
-     * @return the ResponseEntity with status 201 (Created) and with body the new university
-     */
     @PostMapping
-    public ResponseEntity<EntityModel<University>> createUniversity(@RequestBody University university) {
+    public ResponseEntity<?> createUniversity(@RequestBody University university) {
         University savedUniversity = universityService.save(university);
         EntityModel<University> entityModel = assembler.toModel(savedUniversity);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
+        headers.add("update", linkTo(methodOn(UniversityController.class).updateUniversity(savedUniversity.getId(), savedUniversity)).withRel("update").getHref());
+        headers.add("delete", linkTo(methodOn(UniversityController.class).deleteUniversity(savedUniversity.getId())).withRel("delete").getHref());
+
         return ResponseEntity.created(entityModel.getRequiredLink("self").toUri())
+                .headers(headers)
                 .body(entityModel);
     }
 
-    /**
-     * PUT /universities/{id} : Update an existing university.
-     *
-     * @param id the ID of the university to update
-     * @param universityDetails the university to update
-     * @return the ResponseEntity with status 200 (OK) and with body the updated university, or with status 404 (Not Found)
-     */
     @PutMapping("/{id}")
-    public ResponseEntity<EntityModel<University>> updateUniversity(@PathVariable Long id, @RequestBody University universityDetails) {
+    public ResponseEntity<?> updateUniversity(@PathVariable Long id, @RequestBody University universityDetails) {
         University updatedUniversity = universityService.findById(id)
                 .map(university -> {
                     university.setName(universityDetails.getName());
@@ -100,40 +99,26 @@ public class UniversityController {
                     university.setMaxIncomingStudents(universityDetails.getMaxIncomingStudents());
                     university.setNextSpringSemesterStart(universityDetails.getNextSpringSemesterStart());
                     university.setNextAutumnSemesterStart(universityDetails.getNextAutumnSemesterStart());
-
-                    // Handle modules association
-                    if (universityDetails.getModules() != null) {
-                        university.getModules().clear();
-                        university.getModules().addAll(universityDetails.getModules());
-                        for (Module module : university.getModules()) {
-                            module.setUniversity(university);
-                        }
-                    }
+                    university.setModules(universityDetails.getModules());
                     return universityService.save(university);
                 })
                 .orElseGet(() -> {
                     universityDetails.setId(id);
-                    if (universityDetails.getModules() != null) {
-                        for (Module module : universityDetails.getModules()) {
-                            module.setUniversity(universityDetails);
-                        }
-                    }
                     return universityService.save(universityDetails);
                 });
 
         EntityModel<University> entityModel = assembler.toModel(updatedUniversity);
-        return ResponseEntity.ok(entityModel);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
+        headers.add("update", linkTo(methodOn(UniversityController.class).updateUniversity(id, updatedUniversity)).withRel("update").getHref());
+        headers.add("delete", linkTo(methodOn(UniversityController.class).deleteUniversity(id)).withRel("delete").getHref());
+
+        return ResponseEntity.ok().headers(headers).body(entityModel);
     }
 
-    /**
-     * DELETE /universities/{id} : Delete a university by ID.
-     *
-     * @param id the ID of the university to delete
-     * @return the ResponseEntity with status 204 (NO_CONTENT)
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUniversity(@PathVariable Long id) {
-        moduleService.deleteModulesByUniversityId(id);
         universityService.deleteById(id);
         return ResponseEntity.noContent().build();
     }

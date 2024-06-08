@@ -45,6 +45,6 @@ public class UniversityService {
     }
 
     public List<Module> getModulesByUniversityId(Long universityId) {
-        return moduleService.findByUniversityId(universityId);
+        return moduleService.getModulesByUniversityId(universityId);
     }
 }

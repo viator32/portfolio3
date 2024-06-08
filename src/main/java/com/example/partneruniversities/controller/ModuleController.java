@@ -2,18 +2,17 @@ package com.example.partneruniversities.controller;
 
 import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.repository.ModuleRepository;
-import com.example.partneruniversities.service.ModuleService;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 /**
  * REST controller for managing Module entities.
@@ -35,14 +34,18 @@ public class ModuleController {
      * @return the CollectionModel of modules
      */
     @GetMapping
-    public CollectionModel<EntityModel<Module>> getAllModules() {
+    public ResponseEntity<CollectionModel<EntityModel<Module>>> getAllModules() {
         List<EntityModel<Module>> modules = moduleRepository.findAll().stream()
                 .map(module -> EntityModel.of(module,
-                        WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getModuleById(module.getId())).withSelfRel(),
-                        WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")))
+                        linkTo(methodOn(ModuleController.class).getModuleById(module.getId())).withSelfRel(),
+                        linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")))
                 .collect(Collectors.toList());
 
-        return CollectionModel.of(modules, WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withSelfRel());
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", linkTo(methodOn(ModuleController.class).getAllModules()).withSelfRel().getHref());
+
+        CollectionModel<EntityModel<Module>> collectionModel = CollectionModel.of(modules, linkTo(methodOn(ModuleController.class).getAllModules()).withSelfRel());
+        return ResponseEntity.ok().headers(headers).body(collectionModel);
     }
 
     /**
@@ -56,9 +59,16 @@ public class ModuleController {
         Module module = moduleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
-        return ResponseEntity.ok(EntityModel.of(module,
-                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getModuleById(id)).withSelfRel(),
-                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")));
+        EntityModel<Module> entityModel = EntityModel.of(module,
+                linkTo(methodOn(ModuleController.class).getModuleById(id)).withSelfRel(),
+                linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
+        headers.add("update", linkTo(methodOn(ModuleController.class).updateModule(id, module)).withRel("update").getHref());
+        headers.add("delete", linkTo(methodOn(ModuleController.class).deleteModule(id)).withRel("delete").getHref());
+
+        return ResponseEntity.ok().headers(headers).body(entityModel);
     }
 
     /**
@@ -71,10 +81,16 @@ public class ModuleController {
     public ResponseEntity<EntityModel<Module>> createModule(@RequestBody Module module) {
         Module savedModule = moduleRepository.save(module);
         EntityModel<Module> entityModel = EntityModel.of(savedModule,
-                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getModuleById(savedModule.getId())).withSelfRel(),
-                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
+                linkTo(methodOn(ModuleController.class).getModuleById(savedModule.getId())).withSelfRel(),
+                linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
+        headers.add("update", linkTo(methodOn(ModuleController.class).updateModule(savedModule.getId(), savedModule)).withRel("update").getHref());
+        headers.add("delete", linkTo(methodOn(ModuleController.class).deleteModule(savedModule.getId())).withRel("delete").getHref());
 
         return ResponseEntity.created(entityModel.getRequiredLink("self").toUri())
+                .headers(headers)
                 .body(entityModel);
     }
 
@@ -101,10 +117,15 @@ public class ModuleController {
                 });
 
         EntityModel<Module> entityModel = EntityModel.of(updatedModule,
-                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getModuleById(updatedModule.getId())).withSelfRel(),
-                WebMvcLinkBuilder.linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
+                linkTo(methodOn(ModuleController.class).getModuleById(updatedModule.getId())).withSelfRel(),
+                linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
 
-        return ResponseEntity.ok(entityModel);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
+        headers.add("update", linkTo(methodOn(ModuleController.class).updateModule(id, updatedModule)).withRel("update").getHref());
+        headers.add("delete", linkTo(methodOn(ModuleController.class).deleteModule(id)).withRel("delete").getHref());
+
+        return ResponseEntity.ok().headers(headers).body(entityModel);
     }
 
     /**
