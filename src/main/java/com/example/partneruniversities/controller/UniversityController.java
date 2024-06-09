@@ -87,9 +87,10 @@ public class UniversityController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUniversity(@PathVariable Long id, @RequestBody University universityDetails) {
+    public ResponseEntity<EntityModel<University>> updateUniversity(@PathVariable Long id, @RequestBody University universityDetails) {
         University updatedUniversity = universityService.findById(id)
                 .map(university -> {
+                    // Update the basic fields
                     university.setName(universityDetails.getName());
                     university.setCountry(universityDetails.getCountry());
                     university.setDepartmentName(universityDetails.getDepartmentName());
@@ -99,7 +100,10 @@ public class UniversityController {
                     university.setMaxIncomingStudents(universityDetails.getMaxIncomingStudents());
                     university.setNextSpringSemesterStart(universityDetails.getNextSpringSemesterStart());
                     university.setNextAutumnSemesterStart(universityDetails.getNextAutumnSemesterStart());
-                    university.setModules(universityDetails.getModules());
+
+                    // Update the modules collection
+                    updateModules(university, universityDetails);
+
                     return universityService.save(university);
                 })
                 .orElseGet(() -> {
@@ -116,6 +120,21 @@ public class UniversityController {
 
         return ResponseEntity.ok().headers(headers).body(entityModel);
     }
+
+    private void updateModules(University existingUniversity, University updatedUniversityDetails) {
+        List<Module> updatedModules = updatedUniversityDetails.getModules();
+
+        // Clear the existing modules
+        existingUniversity.getModules().clear();
+
+        // Add the updated modules
+        for (Module module : updatedModules) {
+            module.setUniversity(existingUniversity);
+            existingUniversity.getModules().add(module);
+        }
+    }
+
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUniversity(@PathVariable Long id) {

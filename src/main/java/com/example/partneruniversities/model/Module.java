@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import org.springframework.hateoas.RepresentationModel;
 
+import java.util.Objects;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 public class Module extends RepresentationModel<Module> {
@@ -60,5 +62,18 @@ public class Module extends RepresentationModel<Module> {
 
     public void setUniversity(University university) {
         this.university = university;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Module module = (Module) o;
+        return Objects.equals(id, module.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
