@@ -16,13 +16,12 @@ public class PartnerUniversitiesClient {
     private static final String DISPATCHER_URL = "http://localhost:8080/";
 
     private final RestTemplate restTemplate;
-    private final Traverson traverson;
     private final ObjectMapper objectMapper;
 
     public PartnerUniversitiesClient() {
         this.restTemplate = new RestTemplate();
-        this.traverson = new Traverson(URI.create(DISPATCHER_URL), MediaTypes.HAL_JSON);
-        this.traverson.setRestOperations(restTemplate);
+        Traverson traverson = new Traverson(URI.create(DISPATCHER_URL), MediaTypes.HAL_JSON);
+        traverson.setRestOperations(restTemplate);
         this.objectMapper = new ObjectMapper().registerModule(new Jackson2HalModule());
     }
 
