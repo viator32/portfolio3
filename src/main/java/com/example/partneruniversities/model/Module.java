@@ -2,6 +2,7 @@ package com.example.partneruniversities.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.hateoas.RepresentationModel;
 
 import java.util.Objects;
@@ -18,6 +19,7 @@ public class Module extends RepresentationModel<Module> {
     private int semester;
     private int creditPoints;
 
+    @NotNull(message = "University is mandatory")
     @ManyToOne
     @JoinColumn(name = "university_id")
     private University university;

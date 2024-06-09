@@ -2,10 +2,11 @@ package com.example.partneruniversities.controller;
 
 import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.repository.ModuleRepository;
+import jakarta.validation.Valid;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +15,6 @@ import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
-/**
- * REST controller for managing Module entities.
- * Provides endpoints for CRUD operations and HATEOAS links.
- */
 @RestController
 @RequestMapping("/modules")
 public class ModuleController {
@@ -28,11 +25,6 @@ public class ModuleController {
         this.moduleRepository = moduleRepository;
     }
 
-    /**
-     * GET /modules : Get all modules.
-     *
-     * @return the CollectionModel of modules
-     */
     @GetMapping
     public ResponseEntity<CollectionModel<EntityModel<Module>>> getAllModules() {
         List<EntityModel<Module>> modules = moduleRepository.findAll().stream()
@@ -48,12 +40,6 @@ public class ModuleController {
         return ResponseEntity.ok().headers(headers).body(collectionModel);
     }
 
-    /**
-     * GET /modules/{id} : Get a module by ID.
-     *
-     * @param id the ID of the module to retrieve
-     * @return the ResponseEntity with status 200 (OK) and with body the module, or with status 404 (Not Found)
-     */
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<Module>> getModuleById(@PathVariable Long id) {
         Module module = moduleRepository.findById(id)
@@ -71,14 +57,12 @@ public class ModuleController {
         return ResponseEntity.ok().headers(headers).body(entityModel);
     }
 
-    /**
-     * POST /modules : Create a new module.
-     *
-     * @param module the module to create
-     * @return the ResponseEntity with status 201 (Created) and with body the new module
-     */
     @PostMapping
-    public ResponseEntity<EntityModel<Module>> createModule(@RequestBody Module module) {
+    public ResponseEntity<EntityModel<Module>> createModule(@Valid @RequestBody Module module) {
+        if (module.getUniversity() == null) {
+            return ResponseEntity.badRequest().body(EntityModel.of(module,
+                    linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")));
+        }
         Module savedModule = moduleRepository.save(module);
         EntityModel<Module> entityModel = EntityModel.of(savedModule,
                 linkTo(methodOn(ModuleController.class).getModuleById(savedModule.getId())).withSelfRel(),
@@ -94,15 +78,13 @@ public class ModuleController {
                 .body(entityModel);
     }
 
-    /**
-     * PUT /modules/{id} : Update an existing module.
-     *
-     * @param id the ID of the module to update
-     * @param moduleDetails the module to update
-     * @return the ResponseEntity with status 200 (OK) and with body the updated module, or with status 404 (Not Found)
-     */
     @PutMapping("/{id}")
-    public ResponseEntity<EntityModel<Module>> updateModule(@PathVariable Long id, @RequestBody Module moduleDetails) {
+    public ResponseEntity<EntityModel<Module>> updateModule(@PathVariable Long id, @Valid @RequestBody Module moduleDetails) {
+        if (moduleDetails.getUniversity() == null) {
+            return ResponseEntity.badRequest().body(EntityModel.of(moduleDetails,
+                    linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")));
+        }
+
         Module updatedModule = moduleRepository.findById(id)
                 .map(module -> {
                     module.setName(moduleDetails.getName());
@@ -128,12 +110,6 @@ public class ModuleController {
         return ResponseEntity.ok().headers(headers).body(entityModel);
     }
 
-    /**
-     * DELETE /modules/{id} : Delete a module by ID.
-     *
-     * @param id the ID of the module to delete
-     * @return the ResponseEntity with status 204 (NO_CONTENT)
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteModule(@PathVariable Long id) {
         moduleRepository.deleteById(id);

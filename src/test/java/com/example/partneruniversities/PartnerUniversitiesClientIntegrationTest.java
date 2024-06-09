@@ -6,7 +6,9 @@ import com.example.partneruniversities.model.University;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.client.HttpClientErrorException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -123,6 +125,23 @@ class PartnerUniversitiesClientIntegrationTest {
     }
 
     @Test
+    void testCreateModuleWithoutUniversity() {
+        Module module = new Module();
+        module.setName("Test Module");
+        module.setSemester(1);
+        module.setCreditPoints(5);
+        // Do not set the university to simulate the error
+
+        HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () -> {
+            client.createModule(module);
+        });
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    }
+
+
+
+    @Test
     void testGetUniversityById() {
         University university = new University();
         university.setName("Test University");
@@ -174,4 +193,6 @@ class PartnerUniversitiesClientIntegrationTest {
         client.deleteModule(createdModule.getId());
         client.deleteUniversity(createdUniversity.getId());
     }
+
+
 }
