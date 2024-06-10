@@ -9,8 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,10 +20,6 @@ public class UniversityService {
     public UniversityService(UniversityRepository universityRepository, ModuleService moduleService) {
         this.universityRepository = universityRepository;
         this.moduleService = moduleService;
-    }
-
-    public List<University> findAll() {
-        return universityRepository.findAll();
     }
 
     public Optional<University> findById(Long id) {
@@ -46,10 +40,6 @@ public class UniversityService {
         // Delete associated modules first to avoid constraint violations
         moduleService.deleteModulesByUniversityId(id);
         universityRepository.deleteById(id);
-    }
-
-    public List<Module> getModulesByUniversityId(Long universityId) {
-        return moduleService.getModulesByUniversityId(universityId);
     }
 
     public Page<University> searchUniversities(String name, String country, String departmentName, int page, int size, String sortBy, String direction) {

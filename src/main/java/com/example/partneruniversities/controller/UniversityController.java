@@ -5,9 +5,9 @@ import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
 import com.example.partneruniversities.service.ModuleService;
 import com.example.partneruniversities.service.UniversityService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
 import org.springframework.hateoas.RepresentationModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 /**
  * REST controller for managing University entities.
@@ -38,9 +39,6 @@ public class UniversityController {
 
     @GetMapping
     public ResponseEntity<?> getAllUniversities() {
-        List<EntityModel<University>> universities = universityService.findAll().stream()
-                .map(assembler::toModel)
-                .collect(Collectors.toList());
 
         RepresentationModel<?> model = new RepresentationModel<>();
         model.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
@@ -54,6 +52,11 @@ public class UniversityController {
         University university = universityService.findById(id)
                 .orElseThrow(() -> new RuntimeException("University not found"));
 
+        return getResponseEntity(id, university);
+    }
+
+    @NotNull
+    private ResponseEntity<?> getResponseEntity(@PathVariable Long id, University university) {
         EntityModel<University> universityModel = assembler.toModel(university);
 
         HttpHeaders headers = new HttpHeaders();
@@ -138,14 +141,7 @@ public class UniversityController {
                     return universityService.save(universityDetails);
                 });
 
-        EntityModel<University> entityModel = assembler.toModel(updatedUniversity);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
-        headers.add("update", linkTo(methodOn(UniversityController.class).updateUniversity(id, updatedUniversity)).withRel("update").getHref());
-        headers.add("delete", linkTo(methodOn(UniversityController.class).deleteUniversity(id)).withRel("delete").getHref());
-
-        return ResponseEntity.ok().headers(headers).body(entityModel);
+        return (ResponseEntity<EntityModel<University>>) getResponseEntity(id, updatedUniversity);
     }
 
     private void updateModules(University existingUniversity, University updatedUniversityDetails) {

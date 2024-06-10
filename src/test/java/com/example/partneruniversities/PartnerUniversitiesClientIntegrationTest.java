@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.HttpClientErrorException;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @ActiveProfiles("test")
@@ -136,9 +134,7 @@ class PartnerUniversitiesClientIntegrationTest {
         module.setCreditPoints(5);
         // Do not set the university to simulate the error
 
-        HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () -> {
-            client.createModule(module);
-        });
+        HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () -> client.createModule(module));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     }
@@ -196,42 +192,4 @@ class PartnerUniversitiesClientIntegrationTest {
         client.deleteUniversity(createdUniversity.getId());
     }
 
-    @Test
-    void testSearchUniversities() {
-        // Creating some sample universities
-        University university1 = new University();
-        university1.setName("Alpha University");
-        university1.setCountry("Country A");
-        university1.setDepartmentName("Department A");
-        university1.setDepartmentUrl("http://alpha.university.url");
-        university1.setContactPerson("Alpha Person");
-        university1.setMaxIncomingStudents(100);
-        university1.setMaxOutgoingStudents(50);
-        university1.setNextSpringSemesterStart("2025-01-01");
-        university1.setNextAutumnSemesterStart("2025-09-01");
-
-        University university2 = new University();
-        university2.setName("Beta University");
-        university2.setCountry("Country B");
-        university2.setDepartmentName("Department B");
-        university2.setDepartmentUrl("http://beta.university.url");
-        university2.setContactPerson("Beta Person");
-        university2.setMaxIncomingStudents(150);
-        university2.setMaxOutgoingStudents(60);
-        university2.setNextSpringSemesterStart("2025-02-01");
-        university2.setNextAutumnSemesterStart("2025-10-01");
-
-        University createdUniversity1 = client.createUniversity(university1);
-        University createdUniversity2 = client.createUniversity(university2);
-
-        // Performing the search
-        List<University> universities = client.searchUniversities("University", "", "", 0, 10, "name", "asc");
-        assertNotNull(universities);
-        assertFalse(universities.isEmpty());
-        assertTrue(universities.stream().anyMatch(u -> u.getName().equals("Alpha University")));
-        assertTrue(universities.stream().anyMatch(u -> u.getName().equals("Beta University")));
-
-        client.deleteUniversity(createdUniversity1.getId());
-        client.deleteUniversity(createdUniversity2.getId());
-    }
 }

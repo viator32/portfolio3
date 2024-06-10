@@ -3,10 +3,10 @@ package com.example.partneruniversities.controller;
 import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.repository.ModuleRepository;
 import jakarta.validation.Valid;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,6 +49,11 @@ public class ModuleController {
                 linkTo(methodOn(ModuleController.class).getModuleById(id)).withSelfRel(),
                 linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
 
+        return getEntityModelResponseEntity(id, module, entityModel);
+    }
+
+    @NotNull
+    private ResponseEntity<EntityModel<Module>> getEntityModelResponseEntity(@PathVariable Long id, Module module, EntityModel<Module> entityModel) {
         HttpHeaders headers = new HttpHeaders();
         headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
         headers.add("update", linkTo(methodOn(ModuleController.class).updateModule(id, module)).withRel("update").getHref());
@@ -102,12 +107,7 @@ public class ModuleController {
                 linkTo(methodOn(ModuleController.class).getModuleById(updatedModule.getId())).withSelfRel(),
                 linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
-        headers.add("update", linkTo(methodOn(ModuleController.class).updateModule(id, updatedModule)).withRel("update").getHref());
-        headers.add("delete", linkTo(methodOn(ModuleController.class).deleteModule(id)).withRel("delete").getHref());
-
-        return ResponseEntity.ok().headers(headers).body(entityModel);
+        return getEntityModelResponseEntity(id, updatedModule, entityModel);
     }
 
     @DeleteMapping("/{id}")

@@ -2,6 +2,7 @@ package com.example.partneruniversities.assembler;
 
 import com.example.partneruniversities.controller.UniversityController;
 import com.example.partneruniversities.model.University;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -14,7 +15,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 public class UniversityModelAssembler implements RepresentationModelAssembler<University, EntityModel<University>> {
 
     @Override
-    public EntityModel<University> toModel(University university) {
+    public @NotNull EntityModel<University> toModel(@NotNull University university) {
         // Create the self link for the university
         EntityModel<University> universityModel = EntityModel.of(university,
                 linkTo(methodOn(UniversityController.class).getUniversityById(university.getId())).withSelfRel());
@@ -29,7 +30,7 @@ public class UniversityModelAssembler implements RepresentationModelAssembler<Un
     }
 
     @Override
-    public CollectionModel<EntityModel<University>> toCollectionModel(Iterable<? extends University> entities) {
+    public @NotNull CollectionModel<EntityModel<University>> toCollectionModel(@NotNull Iterable<? extends University> entities) {
         CollectionModel<EntityModel<University>> universityModels = RepresentationModelAssembler.super.toCollectionModel(entities);
 
         universityModels.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());

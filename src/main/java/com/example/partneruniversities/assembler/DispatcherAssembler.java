@@ -2,7 +2,6 @@ package com.example.partneruniversities.assembler;
 
 import com.example.partneruniversities.controller.ModuleController;
 import com.example.partneruniversities.controller.UniversityController;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.RepresentationModel;
 import org.springframework.stereotype.Component;
 
@@ -15,11 +14,8 @@ public class DispatcherAssembler {
         RepresentationModel<?> dispatcher = new RepresentationModel<>();
         dispatcher.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withRel("universities"));
         dispatcher.add(linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
-        dispatcher.add(linkTo(methodOn(UniversityController.class).searchUniversities("", "", "", 0, 10, "name", "asc")).withRel("searchUniversities"));
+        dispatcher.add(linkTo(methodOn(UniversityController.class).searchUniversities("", "", "", 0, 10, "name", "asc")).withRel("search"));
         return dispatcher;
     }
 
-    public EntityModel<?> createSelfLink() {
-        return EntityModel.of(new Object(), linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
-    }
 }

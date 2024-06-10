@@ -3,6 +3,7 @@ package com.example.partneruniversities.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+
 import org.springframework.hateoas.RepresentationModel;
 
 import java.util.Objects;

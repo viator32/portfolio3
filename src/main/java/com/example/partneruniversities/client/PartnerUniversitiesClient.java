@@ -7,16 +7,15 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.mediatype.hal.Jackson2HalModule;
-import org.springframework.hateoas.server.core.TypeReferences;
+
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
+
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 public class PartnerUniversitiesClient {
 
@@ -40,7 +39,7 @@ public class PartnerUniversitiesClient {
         try {
             linkCache.put("universities", URI.create(traverson.follow("universities").asLink().getHref()));
             linkCache.put("modules", URI.create(traverson.follow("modules").asLink().getHref()));
-            linkCache.put("searchUniversities", URI.create(traverson.follow("universities").follow("search").asLink().getHref()));
+            linkCache.put("search", URI.create(traverson.follow("search").asLink().getHref()));
         } catch (Exception e) {
             System.err.println("Error initializing links: " + e.getMessage());
             // Optionally log or handle the error as needed
@@ -97,27 +96,4 @@ public class PartnerUniversitiesClient {
         return restTemplate.getForObject(moduleUri, Module.class);
     }
 
-    public List<University> searchUniversities(String name, String country, String departmentName, int page, int size, String sortBy, String direction) {
-        try {
-            URI searchUri = URI.create(linkCache.get("searchUniversities") +
-                    "?name=" + name +
-                    "&country=" + country +
-                    "&departmentName=" + departmentName +
-                    "&page=" + page +
-                    "&size=" + size +
-                    "&sortBy=" + sortBy +
-                    "&direction=" + direction);
-
-            Traverson.TraversalBuilder tb = traverson.follow(searchUri.getPath());
-            return tb.toObject(new TypeReferences.CollectionModelType<EntityModel<University>>() {})
-                    .getContent()
-                    .stream()
-                    .map(entityModel -> objectMapper.convertValue(entityModel.getContent(), University.class))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            System.err.println("Error during search: " + e.getMessage());
-            // Optionally log or handle the error as needed
-            return null;
-        }
-    }
 }
