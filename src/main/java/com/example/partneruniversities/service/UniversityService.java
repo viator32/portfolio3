@@ -3,6 +3,10 @@ package com.example.partneruniversities.service;
 import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
 import com.example.partneruniversities.repository.UniversityRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,5 +50,10 @@ public class UniversityService {
 
     public List<Module> getModulesByUniversityId(Long universityId) {
         return moduleService.getModulesByUniversityId(universityId);
+    }
+
+    public Page<University> searchUniversities(String name, String country, String departmentName, int page, int size, String sortBy, String direction) {
+        Pageable pageable = PageRequest.of(page, size, direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
+        return universityRepository.findByNameContainingAndCountryContainingAndDepartmentNameContaining(name, country, departmentName, pageable);
     }
 }

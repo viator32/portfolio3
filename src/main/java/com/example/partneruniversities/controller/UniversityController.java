@@ -5,8 +5,10 @@ import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
 import com.example.partneruniversities.service.ModuleService;
 import com.example.partneruniversities.service.UniversityService;
+import org.springframework.data.domain.Page;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.RepresentationModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,10 +42,11 @@ public class UniversityController {
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("self", linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel().getHref());
+        RepresentationModel<?> model = new RepresentationModel<>();
+        model.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
+        model.add(linkTo(methodOn(UniversityController.class).searchUniversities("", "", "", 0, 10, "name", "asc")).withRel("search"));
 
-        return ResponseEntity.ok().headers(headers).body(universities);
+        return ResponseEntity.ok(model);
     }
 
     @GetMapping("/{id}")
@@ -60,6 +63,30 @@ public class UniversityController {
 
         return ResponseEntity.ok().headers(headers).body(universityModel);
     }
+
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchUniversities(
+            @RequestParam(defaultValue = "") String name,
+            @RequestParam(defaultValue = "") String country,
+            @RequestParam(defaultValue = "") String departmentName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+
+        Page<University> universityPage = universityService.searchUniversities(name, country, departmentName, page, size, sortBy, direction);
+        List<EntityModel<University>> universities = universityPage.stream()
+                .map(assembler::toModel)
+                .collect(Collectors.toList());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", linkTo(methodOn(UniversityController.class).searchUniversities(name, country, departmentName, page, size, sortBy, direction)).withSelfRel().getHref());
+
+        return ResponseEntity.ok().headers(headers).body(universities);
+    }
+
+
 
     @GetMapping("/{universityId}/modules")
     public ResponseEntity<?> getModulesByUniversityId(@PathVariable Long universityId) {

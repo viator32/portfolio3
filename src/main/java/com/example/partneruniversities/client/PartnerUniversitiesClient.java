@@ -8,11 +8,15 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.mediatype.hal.Jackson2HalModule;
 import org.springframework.hateoas.server.core.TypeReferences;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class PartnerUniversitiesClient {
 
@@ -33,8 +37,14 @@ public class PartnerUniversitiesClient {
     }
 
     private void initializeLinks() {
-        linkCache.put("universities", URI.create(traverson.follow("universities").asLink().getHref()));
-        linkCache.put("modules", URI.create(traverson.follow("modules").asLink().getHref()));
+        try {
+            linkCache.put("universities", URI.create(traverson.follow("universities").asLink().getHref()));
+            linkCache.put("modules", URI.create(traverson.follow("modules").asLink().getHref()));
+            linkCache.put("searchUniversities", URI.create(traverson.follow("universities").follow("search").asLink().getHref()));
+        } catch (Exception e) {
+            System.err.println("Error initializing links: " + e.getMessage());
+            // Optionally log or handle the error as needed
+        }
     }
 
     public University createUniversity(University university) {
@@ -56,9 +66,15 @@ public class PartnerUniversitiesClient {
     }
 
     public Module updateModule(Long id, Module module) {
-        URI moduleUri = URI.create(linkCache.get("modules") + "/" + id);
-        restTemplate.put(moduleUri, module);
-        return restTemplate.getForObject(moduleUri, Module.class);
+        try {
+            URI moduleUri = URI.create(linkCache.get("modules") + "/" + id);
+            restTemplate.put(moduleUri, module);
+            return restTemplate.getForObject(moduleUri, Module.class);
+        } catch (RestClientException e) {
+            System.err.println("Error updating module: " + e.getMessage());
+            // Handle the error as needed, e.g., return null or throw a custom exception
+            return null;
+        }
     }
 
     public void deleteUniversity(Long id) {
@@ -79,5 +95,29 @@ public class PartnerUniversitiesClient {
     public Module getModuleById(Long id) {
         URI moduleUri = URI.create(linkCache.get("modules") + "/" + id);
         return restTemplate.getForObject(moduleUri, Module.class);
+    }
+
+    public List<University> searchUniversities(String name, String country, String departmentName, int page, int size, String sortBy, String direction) {
+        try {
+            URI searchUri = URI.create(linkCache.get("searchUniversities") +
+                    "?name=" + name +
+                    "&country=" + country +
+                    "&departmentName=" + departmentName +
+                    "&page=" + page +
+                    "&size=" + size +
+                    "&sortBy=" + sortBy +
+                    "&direction=" + direction);
+
+            Traverson.TraversalBuilder tb = traverson.follow(searchUri.getPath());
+            return tb.toObject(new TypeReferences.CollectionModelType<EntityModel<University>>() {})
+                    .getContent()
+                    .stream()
+                    .map(entityModel -> objectMapper.convertValue(entityModel.getContent(), University.class))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error during search: " + e.getMessage());
+            // Optionally log or handle the error as needed
+            return null;
+        }
     }
 }
