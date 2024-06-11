@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,6 +24,10 @@ public class UniversityService {
         this.moduleService = moduleService;
     }
 
+    public List<University> findAll() {
+        return universityRepository.findAll();
+    }
+
     public Optional<University> findById(Long id) {
         return universityRepository.findById(id);
     }
@@ -31,6 +37,7 @@ public class UniversityService {
         // Ensure all modules are properly linked to the university
         for (Module module : university.getModules()) {
             module.setUniversity(university);
+            moduleService.save(module);
         }
         return universityRepository.save(university);
     }

@@ -7,15 +7,16 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.mediatype.hal.Jackson2HalModule;
-
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.HashMap;
-
 import java.util.Map;
-
 
 public class PartnerUniversitiesClient {
 
@@ -42,58 +43,108 @@ public class PartnerUniversitiesClient {
             linkCache.put("search", URI.create(traverson.follow("search").asLink().getHref()));
         } catch (Exception e) {
             System.err.println("Error initializing links: " + e.getMessage());
-            // Optionally log or handle the error as needed
         }
     }
 
     public University createUniversity(University university) {
-        EntityModel<University> universityEntityModel = restTemplate.postForObject(
-                linkCache.get("universities"), university, EntityModel.class);
-        return objectMapper.convertValue(universityEntityModel.getContent(), University.class);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON); // Ensure this is set
+
+            HttpEntity<University> request = new HttpEntity<>(university, headers);
+            ResponseEntity<EntityModel> response = restTemplate.postForEntity(
+                    linkCache.get("universities"), request, EntityModel.class);
+
+            return objectMapper.convertValue(response.getBody().getContent(), University.class);
+        } catch (RestClientException e) {
+            System.err.println("Error creating university: " + e.getMessage());
+            throw e;
+        }
     }
 
     public Module createModule(Module module) {
-        EntityModel<Module> moduleEntityModel = restTemplate.postForObject(
-                linkCache.get("modules"), module, EntityModel.class);
-        return objectMapper.convertValue(moduleEntityModel.getContent(), Module.class);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Module> request = new HttpEntity<>(module, headers);
+            ResponseEntity<EntityModel> response = restTemplate.postForEntity(
+                    linkCache.get("modules"), request, EntityModel.class);
+
+            return objectMapper.convertValue(response.getBody().getContent(), Module.class);
+        } catch (RestClientException e) {
+            System.err.println("Error creating module: " + e.getMessage());
+            throw e;
+        }
     }
 
     public University updateUniversity(Long id, University university) {
-        URI universityUri = URI.create(linkCache.get("universities") + "/" + id);
-        restTemplate.put(universityUri, university);
-        return restTemplate.getForObject(universityUri, University.class);
+        try {
+            URI universityUri = URI.create(linkCache.get("universities") + "/" + id);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Content-Type", "application/json");
+            HttpEntity<University> request = new HttpEntity<>(university, headers);
+
+            restTemplate.put(universityUri, request);
+            return restTemplate.getForObject(universityUri, University.class);
+        } catch (RestClientException e) {
+            System.err.println("Error updating university: " + e.getMessage());
+            throw e;
+        }
     }
 
     public Module updateModule(Long id, Module module) {
         try {
             URI moduleUri = URI.create(linkCache.get("modules") + "/" + id);
-            restTemplate.put(moduleUri, module);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Content-Type", "application/json");
+            HttpEntity<Module> request = new HttpEntity<>(module, headers);
+
+            restTemplate.put(moduleUri, request);
             return restTemplate.getForObject(moduleUri, Module.class);
         } catch (RestClientException e) {
             System.err.println("Error updating module: " + e.getMessage());
-            // Handle the error as needed, e.g., return null or throw a custom exception
-            return null;
+            throw e;
         }
     }
 
     public void deleteUniversity(Long id) {
-        URI universityUri = URI.create(linkCache.get("universities") + "/" + id);
-        restTemplate.delete(universityUri);
+        try {
+            URI universityUri = URI.create(linkCache.get("universities") + "/" + id);
+            restTemplate.delete(universityUri);
+        } catch (RestClientException e) {
+            System.err.println("Error deleting university: " + e.getMessage());
+            throw e;
+        }
     }
 
     public void deleteModule(Long id) {
-        URI moduleUri = URI.create(linkCache.get("modules") + "/" + id);
-        restTemplate.delete(moduleUri);
+        try {
+            URI moduleUri = URI.create(linkCache.get("modules") + "/" + id);
+            restTemplate.delete(moduleUri);
+        } catch (RestClientException e) {
+            System.err.println("Error deleting module: " + e.getMessage());
+            throw e;
+        }
     }
 
     public University getUniversityById(Long id) {
-        URI universityUri = URI.create(linkCache.get("universities") + "/" + id);
-        return restTemplate.getForObject(universityUri, University.class);
+        try {
+            URI universityUri = URI.create(linkCache.get("universities") + "/" + id);
+            return restTemplate.getForObject(universityUri, University.class);
+        } catch (RestClientException e) {
+            System.err.println("Error fetching university by ID: " + e.getMessage());
+            throw e;
+        }
     }
 
     public Module getModuleById(Long id) {
-        URI moduleUri = URI.create(linkCache.get("modules") + "/" + id);
-        return restTemplate.getForObject(moduleUri, Module.class);
+        try {
+            URI moduleUri = URI.create(linkCache.get("modules") + "/" + id);
+            return restTemplate.getForObject(moduleUri, Module.class);
+        } catch (RestClientException e) {
+            System.err.println("Error fetching module by ID: " + e.getMessage());
+            throw e;
+        }
     }
-
 }

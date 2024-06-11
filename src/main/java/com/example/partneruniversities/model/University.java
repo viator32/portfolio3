@@ -1,5 +1,6 @@
 package com.example.partneruniversities.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import org.springframework.hateoas.RepresentationModel;
@@ -26,6 +27,7 @@ public class University extends RepresentationModel<University> {
     private String nextAutumnSemesterStart;
 
     @OneToMany(mappedBy = "university", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Module> modules = new ArrayList<>();
 
     // Getters and Setters
@@ -78,20 +80,20 @@ public class University extends RepresentationModel<University> {
         this.contactPerson = contactPerson;
     }
 
-    public int getMaxOutgoingStudents() {
-        return maxOutgoingStudents;
-    }
-
-    public void setMaxOutgoingStudents(int maxOutgoingStudents) {
-        this.maxOutgoingStudents = maxOutgoingStudents;
-    }
-
     public int getMaxIncomingStudents() {
         return maxIncomingStudents;
     }
 
     public void setMaxIncomingStudents(int maxIncomingStudents) {
         this.maxIncomingStudents = maxIncomingStudents;
+    }
+
+    public int getMaxOutgoingStudents() {
+        return maxOutgoingStudents;
+    }
+
+    public void setMaxOutgoingStudents(int maxOutgoingStudents) {
+        this.maxOutgoingStudents = maxOutgoingStudents;
     }
 
     public String getNextSpringSemesterStart() {
@@ -116,5 +118,22 @@ public class University extends RepresentationModel<University> {
 
     public void setModules(List<Module> modules) {
         this.modules = modules;
+    }
+
+    @Override
+    public String toString() {
+        return "University{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", country='" + country + '\'' +
+                ", departmentName='" + departmentName + '\'' +
+                ", departmentUrl='" + departmentUrl + '\'' +
+                ", contactPerson='" + contactPerson + '\'' +
+                ", maxIncomingStudents=" + maxIncomingStudents +
+                ", maxOutgoingStudents=" + maxOutgoingStudents +
+                ", nextSpringSemesterStart='" + nextSpringSemesterStart + '\'' +
+                ", nextAutumnSemesterStart='" + nextAutumnSemesterStart + '\'' +
+                ", modules=" + (modules != null ? modules.size() : 0) +
+                '}';
     }
 }

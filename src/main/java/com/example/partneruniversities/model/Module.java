@@ -1,9 +1,9 @@
 package com.example.partneruniversities.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-
 import org.springframework.hateoas.RepresentationModel;
 
 import java.util.Objects;
@@ -23,6 +23,7 @@ public class Module extends RepresentationModel<Module> {
     @NotNull(message = "University is mandatory")
     @ManyToOne
     @JoinColumn(name = "university_id")
+    @JsonBackReference
     private University university;
 
     // Getters and Setters
@@ -78,5 +79,16 @@ public class Module extends RepresentationModel<Module> {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "Module{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", semester=" + semester +
+                ", creditPoints=" + creditPoints +
+                ", university=" + (university != null ? university.getId() : null) +
+                '}';
     }
 }

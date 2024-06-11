@@ -2,11 +2,12 @@ package com.example.partneruniversities.controller;
 
 import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.repository.ModuleRepository;
+import com.example.partneruniversities.repository.UniversityRepository;
 import jakarta.validation.Valid;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +21,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 public class ModuleController {
 
     private final ModuleRepository moduleRepository;
+    private final UniversityRepository universityRepository;
 
-    public ModuleController(ModuleRepository moduleRepository) {
+    public ModuleController(ModuleRepository moduleRepository, UniversityRepository universityRepository) {
         this.moduleRepository = moduleRepository;
+        this.universityRepository = universityRepository;
     }
 
     @GetMapping
@@ -49,22 +52,12 @@ public class ModuleController {
                 linkTo(methodOn(ModuleController.class).getModuleById(id)).withSelfRel(),
                 linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
 
-        return getEntityModelResponseEntity(id, module, entityModel);
+        return ResponseEntity.ok().body(entityModel);
     }
 
-    @NotNull
-    private ResponseEntity<EntityModel<Module>> getEntityModelResponseEntity(@PathVariable Long id, Module module, EntityModel<Module> entityModel) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
-        headers.add("update", linkTo(methodOn(ModuleController.class).updateModule(id, module)).withRel("update").getHref());
-        headers.add("delete", linkTo(methodOn(ModuleController.class).deleteModule(id)).withRel("delete").getHref());
-
-        return ResponseEntity.ok().headers(headers).body(entityModel);
-    }
-
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<EntityModel<Module>> createModule(@Valid @RequestBody Module module) {
-        if (module.getUniversity() == null) {
+        if (module.getUniversity() == null || !universityRepository.existsById(module.getUniversity().getId())) {
             return ResponseEntity.badRequest().body(EntityModel.of(module,
                     linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")));
         }
@@ -73,19 +66,12 @@ public class ModuleController {
                 linkTo(methodOn(ModuleController.class).getModuleById(savedModule.getId())).withSelfRel(),
                 linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("self", entityModel.getLink("self").orElseThrow().getHref());
-        headers.add("update", linkTo(methodOn(ModuleController.class).updateModule(savedModule.getId(), savedModule)).withRel("update").getHref());
-        headers.add("delete", linkTo(methodOn(ModuleController.class).deleteModule(savedModule.getId())).withRel("delete").getHref());
-
-        return ResponseEntity.created(entityModel.getRequiredLink("self").toUri())
-                .headers(headers)
-                .body(entityModel);
+        return ResponseEntity.created(entityModel.getRequiredLink("self").toUri()).body(entityModel);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EntityModel<Module>> updateModule(@PathVariable Long id, @Valid @RequestBody Module moduleDetails) {
-        if (moduleDetails.getUniversity() == null) {
+        if (moduleDetails.getUniversity() == null || !universityRepository.existsById(moduleDetails.getUniversity().getId())) {
             return ResponseEntity.badRequest().body(EntityModel.of(moduleDetails,
                     linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules")));
         }
@@ -107,7 +93,7 @@ public class ModuleController {
                 linkTo(methodOn(ModuleController.class).getModuleById(updatedModule.getId())).withSelfRel(),
                 linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
 
-        return getEntityModelResponseEntity(id, updatedModule, entityModel);
+        return ResponseEntity.ok().body(entityModel);
     }
 
     @DeleteMapping("/{id}")

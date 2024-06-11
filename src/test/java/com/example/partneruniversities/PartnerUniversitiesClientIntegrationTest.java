@@ -56,7 +56,12 @@ class PartnerUniversitiesClientIntegrationTest {
         university.setNextSpringSemesterStart("2025-01-01");
         university.setNextAutumnSemesterStart("2025-09-01");
 
+        // Log the university before sending
+        System.out.println("Creating university with data: " + university);
+
         University createdUniversity = client.createUniversity(university);
+        assertNotNull(createdUniversity);
+        assertNotNull(createdUniversity.getId());
 
         Module module = new Module();
         module.setName("Test Module");
@@ -64,9 +69,27 @@ class PartnerUniversitiesClientIntegrationTest {
         module.setCreditPoints(5);
         module.setUniversity(createdUniversity);
 
-        Module createdModule = client.createModule(module);
+        // Log the module before sending
+        System.out.println("Creating module with data: " + module);
+
+        Module createdModule = null;
+        try {
+            createdModule = client.createModule(module);
+        } catch (HttpClientErrorException e) {
+            System.err.println("Error creating module: " + e.getMessage());
+            System.err.println("Response body: " + e.getResponseBodyAsString());
+            throw e;
+        }
+
         assertNotNull(createdModule);
         assertNotNull(createdModule.getId());
+
+        // Additional assertions to verify the module data
+        assertEquals("Test Module", createdModule.getName());
+        assertEquals(1, createdModule.getSemester());
+        assertEquals(5, createdModule.getCreditPoints());
+        assertNotNull(createdModule.getUniversity());
+        assertEquals(createdUniversity.getId(), createdModule.getUniversity().getId());
 
         client.deleteModule(createdModule.getId());
         client.deleteUniversity(createdUniversity.getId());
@@ -191,5 +214,4 @@ class PartnerUniversitiesClientIntegrationTest {
         client.deleteModule(createdModule.getId());
         client.deleteUniversity(createdUniversity.getId());
     }
-
 }
