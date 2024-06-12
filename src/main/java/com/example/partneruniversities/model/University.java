@@ -2,6 +2,8 @@ package com.example.partneruniversities.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import org.springframework.hateoas.RepresentationModel;
 
@@ -122,18 +124,11 @@ public class University extends RepresentationModel<University> {
 
     @Override
     public String toString() {
-        return "University{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", country='" + country + '\'' +
-                ", departmentName='" + departmentName + '\'' +
-                ", departmentUrl='" + departmentUrl + '\'' +
-                ", contactPerson='" + contactPerson + '\'' +
-                ", maxIncomingStudents=" + maxIncomingStudents +
-                ", maxOutgoingStudents=" + maxOutgoingStudents +
-                ", nextSpringSemesterStart='" + nextSpringSemesterStart + '\'' +
-                ", nextAutumnSemesterStart='" + nextAutumnSemesterStart + '\'' +
-                ", modules=" + (modules != null ? modules.size() : 0) +
-                '}';
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

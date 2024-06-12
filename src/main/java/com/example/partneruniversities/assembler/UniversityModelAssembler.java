@@ -34,6 +34,7 @@ public class UniversityModelAssembler implements RepresentationModelAssembler<Un
         CollectionModel<EntityModel<University>> universityModels = RepresentationModelAssembler.super.toCollectionModel(entities);
 
         universityModels.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
+        universityModels.add(linkTo(methodOn(UniversityController.class).searchUniversities("", "", "", 0, 10, "name", "asc")).withRel("search"));
 
         return universityModels;
     }

@@ -2,6 +2,11 @@ package com.example.partneruniversities.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.hateoas.RepresentationModel;
@@ -10,6 +15,7 @@ import java.util.Objects;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Module extends RepresentationModel<Module> {
 
     @Id
@@ -64,6 +70,7 @@ public class Module extends RepresentationModel<Module> {
         return university;
     }
 
+    @JsonProperty("university")
     public void setUniversity(University university) {
         this.university = university;
     }
@@ -83,12 +90,22 @@ public class Module extends RepresentationModel<Module> {
 
     @Override
     public String toString() {
-        return "Module{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", semester=" + semester +
-                ", creditPoints=" + creditPoints +
-                ", university=" + (university != null ? university.getId() : null) +
-                '}';
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            ObjectNode moduleNode = mapper.createObjectNode();
+            moduleNode.put("name", name);
+            moduleNode.put("semester", semester);
+            moduleNode.put("creditPoints", creditPoints);
+
+            if (university != null && university.getId() != null) {
+                ObjectNode universityNode = mapper.createObjectNode();
+                universityNode.put("id", university.getId());
+                moduleNode.set("university", universityNode);
+            }
+
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(moduleNode);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

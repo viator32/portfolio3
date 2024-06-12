@@ -12,12 +12,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * REST controller for managing University entities.
@@ -53,7 +55,7 @@ public class UniversityController {
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<University>> getUniversityById(@PathVariable Long id) {
         University university = universityService.findById(id)
-                .orElseThrow(() -> new RuntimeException("University not found"));
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "University not found"));
 
         return getResponseEntity(id, university);
     }

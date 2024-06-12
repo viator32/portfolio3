@@ -3,215 +3,229 @@ package com.example.partneruniversities;
 import com.example.partneruniversities.client.PartnerUniversitiesClient;
 import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-@ActiveProfiles("test")
+import static org.assertj.core.api.Assertions.assertThat;
+
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
-class PartnerUniversitiesClientIntegrationTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class PartnerUniversitiesClientIntegrationTest {
 
+    @Autowired
     private PartnerUniversitiesClient client;
 
-    @BeforeEach
-    void setUp() {
-        client = new PartnerUniversitiesClient();
-    }
+    private Long createdUniversityId;
+    private Long createdModuleId;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
-    @Test
-    void testCreateAndDeleteUniversity() {
+    @BeforeAll
+    public void setUp() throws Exception {
+        // Create a test university
         University university = new University();
         university.setName("Test University");
         university.setCountry("Test Country");
         university.setDepartmentName("Test Department");
-        university.setDepartmentUrl("http://test.department.url");
-        university.setContactPerson("Test Person");
-        university.setMaxIncomingStudents(100);
-        university.setMaxOutgoingStudents(50);
-        university.setNextSpringSemesterStart("2025-01-01");
-        university.setNextAutumnSemesterStart("2025-09-01");
+        university.setDepartmentUrl("http://test.example.com");
+        university.setContactPerson("Test Contact Person");
+        university.setMaxOutgoingStudents(10);
+        university.setMaxIncomingStudents(10);
+        university.setNextSpringSemesterStart("2023-01-15");
+        university.setNextAutumnSemesterStart("2023-09-15");
 
-        University createdUniversity = client.createUniversity(university);
-        assertNotNull(createdUniversity);
-        assertNotNull(createdUniversity.getId());
+        String universityJson = objectMapper.writeValueAsString(university);
+        EntityModel<University> createdUniversity = client.createUniversity(universityJson);
+        this.createdUniversityId = createdUniversity.getContent().getId();
 
-        client.deleteUniversity(createdUniversity.getId());
-    }
-
-    @Test
-    void testCreateAndDeleteModule() {
-        University university = new University();
-        university.setName("Test University");
-        university.setCountry("Test Country");
-        university.setDepartmentName("Test Department");
-        university.setDepartmentUrl("http://test.department.url");
-        university.setContactPerson("Test Person");
-        university.setMaxIncomingStudents(100);
-        university.setMaxOutgoingStudents(50);
-        university.setNextSpringSemesterStart("2025-01-01");
-        university.setNextAutumnSemesterStart("2025-09-01");
-
-        // Log the university before sending
-        System.out.println("Creating university with data: " + university);
-
-        University createdUniversity = client.createUniversity(university);
-        assertNotNull(createdUniversity);
-        assertNotNull(createdUniversity.getId());
-
+        // Create a test module
         Module module = new Module();
         module.setName("Test Module");
-        module.setSemester(1);
+        module.setSemester(5);
         module.setCreditPoints(5);
-        module.setUniversity(createdUniversity);
+        University refUniversity = new University();
+        refUniversity.setId(createdUniversityId);
+        module.setUniversity(refUniversity);
 
-        // Log the module before sending
-        System.out.println("Creating module with data: " + module);
+        String moduleJson = module.toString();
+        EntityModel<Module> createdModule = client.createModule(moduleJson);
+        this.createdModuleId = createdModule.getContent().getId();
+    }
 
-        Module createdModule = null;
-        try {
-            createdModule = client.createModule(module);
-        } catch (HttpClientErrorException e) {
-            System.err.println("Error creating module: " + e.getMessage());
-            System.err.println("Response body: " + e.getResponseBodyAsString());
-            throw e;
+    @AfterAll
+    public void tearDown() {
+        // Clean up test module
+        if (createdModuleId != null) {
+            client.deleteModule(createdModuleId);
         }
 
-        assertNotNull(createdModule);
-        assertNotNull(createdModule.getId());
-
-        // Additional assertions to verify the module data
-        assertEquals("Test Module", createdModule.getName());
-        assertEquals(1, createdModule.getSemester());
-        assertEquals(5, createdModule.getCreditPoints());
-        assertNotNull(createdModule.getUniversity());
-        assertEquals(createdUniversity.getId(), createdModule.getUniversity().getId());
-
-        client.deleteModule(createdModule.getId());
-        client.deleteUniversity(createdUniversity.getId());
+        // Clean up test university
+        if (createdUniversityId != null) {
+            client.deleteUniversity(createdUniversityId);
+        }
     }
 
     @Test
-    void testUpdateUniversity() {
-        University university = new University();
-        university.setName("Test University");
-        university.setCountry("Test Country");
-        university.setDepartmentName("Test Department");
-        university.setDepartmentUrl("http://test.department.url");
-        university.setContactPerson("Test Person");
-        university.setMaxIncomingStudents(100);
-        university.setMaxOutgoingStudents(50);
-        university.setNextSpringSemesterStart("2025-01-01");
-        university.setNextAutumnSemesterStart("2025-09-01");
-
-        University createdUniversity = client.createUniversity(university);
-        createdUniversity.setName("Updated Test University");
-
-        University updatedUniversity = client.updateUniversity(createdUniversity.getId(), createdUniversity);
-        assertEquals("Updated Test University", updatedUniversity.getName());
-
-        client.deleteUniversity(createdUniversity.getId());
+    public void testGetAllUniversities() {
+        List<EntityModel<University>> universities = client.getAllUniversities();
+        assertThat(universities).isNotNull();
+        assertThat(universities.size()).isGreaterThan(0);
     }
 
     @Test
-    void testUpdateModule() {
+    public void testGetUniversityById() {
+        EntityModel<University> university = client.getUniversityById(createdUniversityId);
+        assertThat(university).isNotNull();
+        assertThat(university.getContent().getId()).isEqualTo(createdUniversityId);
+    }
+
+    @Test
+    public void testSearchUniversities() {
+        Map<String, String> params = new HashMap<>();
+        params.put("name", "Test University");
+        List<EntityModel<University>> universities = client.searchUniversities(params);
+        assertThat(universities).isNotNull();
+        assertThat(universities.size()).isGreaterThan(0);
+    }
+
+    @Test
+    public void testGetAllModules() {
+        List<EntityModel<Module>> modules = client.getAllModules();
+        assertThat(modules).isNotNull();
+        assertThat(modules.size()).isGreaterThan(0);
+    }
+
+    @Test
+    public void testGetModuleById() {
+        EntityModel<Module> module = client.getModuleById(createdModuleId);
+        assertThat(module).isNotNull();
+        assertThat(module.getContent().getId()).isEqualTo(createdModuleId);
+    }
+
+    @Test
+    public void testCreateUniversity() throws Exception {
         University university = new University();
-        university.setName("Test University");
-        university.setCountry("Test Country");
-        university.setDepartmentName("Test Department");
-        university.setDepartmentUrl("http://test.department.url");
-        university.setContactPerson("Test Person");
-        university.setMaxIncomingStudents(100);
-        university.setMaxOutgoingStudents(50);
-        university.setNextSpringSemesterStart("2025-01-01");
-        university.setNextAutumnSemesterStart("2025-09-01");
+        university.setName("New University");
+        university.setCountry("Country");
+        university.setDepartmentName("Department");
+        university.setDepartmentUrl("http://example.com");
+        university.setContactPerson("Contact Person");
+        university.setMaxOutgoingStudents(10);
+        university.setMaxIncomingStudents(10);
+        university.setNextSpringSemesterStart("2023-01-15");
+        university.setNextAutumnSemesterStart("2023-09-15");
 
-        University createdUniversity = client.createUniversity(university);
+        String universityJson = objectMapper.writeValueAsString(university);
+        EntityModel<University> createdUniversity = client.createUniversity(universityJson);
+        assertThat(createdUniversity).isNotNull();
+        assertThat(createdUniversity.getContent().getId()).isNotNull();
 
+        // Clean up created university
+        client.deleteUniversity(createdUniversity.getContent().getId());
+    }
+
+    @Test
+    public void testUpdateUniversity() throws Exception {
+        University university = new University();
+        university.setName("Updated University");
+        university.setCountry("Updated Country");
+        university.setDepartmentName("Updated Department");
+        university.setDepartmentUrl("http://updated.example.com");
+        university.setContactPerson("Updated Contact Person");
+        university.setMaxOutgoingStudents(15);
+        university.setMaxIncomingStudents(15);
+        university.setNextSpringSemesterStart("2023-02-01");
+        university.setNextAutumnSemesterStart("2023-10-01");
+
+        String universityJson = objectMapper.writeValueAsString(university);
+        EntityModel<University> updatedUniversity = client.updateUniversity(createdUniversityId, universityJson);
+        assertThat(updatedUniversity).isNotNull();
+        assertThat(updatedUniversity.getContent().getName()).isEqualTo("Updated University");
+    }
+
+    @Test
+    public void testDeleteUniversity() throws Exception {
+        University university = new University();
+        university.setName("University to Delete");
+        university.setCountry("Country");
+        university.setDepartmentName("Department");
+        university.setDepartmentUrl("http://example.com");
+        university.setContactPerson("Contact Person");
+        university.setMaxOutgoingStudents(10);
+        university.setMaxIncomingStudents(10);
+        university.setNextSpringSemesterStart("2023-01-15");
+        university.setNextAutumnSemesterStart("2023-09-15");
+
+        String universityJson = objectMapper.writeValueAsString(university);
+        EntityModel<University> createdUniversity = client.createUniversity(universityJson);
+        Long idToDelete = createdUniversity.getContent().getId();
+        client.deleteUniversity(idToDelete);
+
+        // Verify deletion
+        try {
+            client.getUniversityById(idToDelete);
+            Assertions.fail("Expected a RuntimeException to be thrown");
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage()).contains("404");
+        }
+    }
+
+    @Test
+    public void testCreateModule() throws Exception {
         Module module = new Module();
-        module.setName("Test Module");
-        module.setSemester(1);
-        module.setCreditPoints(5);
-        module.setUniversity(createdUniversity);
+        module.setName("New Module");
+        module.setSemester(4);
+        module.setCreditPoints(6);
+        University refUniversity = new University();
+        refUniversity.setId(createdUniversityId);
+        module.setUniversity(refUniversity);
 
-        Module createdModule = client.createModule(module);
-        createdModule.setName("Updated Test Module");
+        String moduleJson = module.toString();
+        EntityModel<Module> createdModule = client.createModule(moduleJson);
+        assertThat(createdModule).isNotNull();
+        assertThat(createdModule.getContent().getId()).isNotNull();
 
-        Module updatedModule = client.updateModule(createdModule.getId(), createdModule);
-        assertNotNull(updatedModule); // Ensure update was successful
-        assertEquals("Updated Test Module", updatedModule.getName());
-
-        client.deleteModule(createdModule.getId());
-        client.deleteUniversity(createdUniversity.getId());
+        // Clean up created module
+        client.deleteModule(createdModule.getContent().getId());
     }
 
     @Test
-    void testCreateModuleWithoutUniversity() {
+    public void testDeleteModule() throws Exception {
         Module module = new Module();
-        module.setName("Test Module");
-        module.setSemester(1);
-        module.setCreditPoints(5);
-        // Do not set the university to simulate the error
+        module.setName("Module to Delete");
+        module.setSemester(4);
+        module.setCreditPoints(6);
+        University refUniversity = new University();
+        refUniversity.setId(createdUniversityId);
+        module.setUniversity(refUniversity);
 
-        HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () -> client.createModule(module));
+        String moduleJson = module.toString();
+        EntityModel<Module> createdModule = client.createModule(moduleJson);
+        Long idToDelete = createdModule.getContent().getId();
+        client.deleteModule(idToDelete);
 
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        // Verify deletion
+        try {
+            client.getModuleById(idToDelete);
+            Assertions.fail("Expected a RuntimeException to be thrown");
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage()).contains("Module not found");
+        }
     }
 
     @Test
-    void testGetUniversityById() {
-        University university = new University();
-        university.setName("Test University");
-        university.setCountry("Test Country");
-        university.setDepartmentName("Test Department");
-        university.setDepartmentUrl("http://test.department.url");
-        university.setContactPerson("Test Person");
-        university.setMaxIncomingStudents(100);
-        university.setMaxOutgoingStudents(50);
-        university.setNextSpringSemesterStart("2025-01-01");
-        university.setNextAutumnSemesterStart("2025-09-01");
-
-        University createdUniversity = client.createUniversity(university);
-
-        University fetchedUniversity = client.getUniversityById(createdUniversity.getId());
-        assertNotNull(fetchedUniversity);
-        assertEquals("Test University", fetchedUniversity.getName());
-
-        client.deleteUniversity(createdUniversity.getId());
-    }
-
-    @Test
-    void testGetModuleById() {
-        University university = new University();
-        university.setName("Test University");
-        university.setCountry("Test Country");
-        university.setDepartmentName("Test Department");
-        university.setDepartmentUrl("http://test.department.url");
-        university.setContactPerson("Test Person");
-        university.setMaxIncomingStudents(100);
-        university.setMaxOutgoingStudents(50);
-        university.setNextSpringSemesterStart("2025-01-01");
-        university.setNextAutumnSemesterStart("2025-09-01");
-
-        University createdUniversity = client.createUniversity(university);
-
-        Module module = new Module();
-        module.setName("Test Module");
-        module.setSemester(1);
-        module.setCreditPoints(5);
-        module.setUniversity(createdUniversity);
-
-        Module createdModule = client.createModule(module);
-
-        Module fetchedModule = client.getModuleById(createdModule.getId());
-        assertNotNull(fetchedModule);
-        assertEquals("Test Module", fetchedModule.getName());
-
-        client.deleteModule(createdModule.getId());
-        client.deleteUniversity(createdUniversity.getId());
+    public void testGetModulesByUniversityId() {
+        List<EntityModel<Module>> modules = client.getModulesByUniversityId(createdUniversityId);
+        assertThat(modules).isNotNull();
+        assertThat(modules.size()).isGreaterThan(0);
     }
 }

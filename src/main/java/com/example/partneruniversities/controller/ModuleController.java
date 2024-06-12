@@ -10,11 +10,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
 @RequestMapping("/modules")
@@ -46,7 +48,7 @@ public class ModuleController {
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<Module>> getModuleById(@PathVariable Long id) {
         Module module = moduleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Module not found"));
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Module not found"));
 
         EntityModel<Module> entityModel = EntityModel.of(module,
                 linkTo(methodOn(ModuleController.class).getModuleById(id)).withSelfRel(),
