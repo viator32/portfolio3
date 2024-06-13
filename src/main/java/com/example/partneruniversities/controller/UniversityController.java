@@ -65,6 +65,7 @@ public class UniversityController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("self", linkTo(methodOn(UniversityController.class).getAllUniversities(page, size)).withSelfRel().getHref());
+        headers.add("search", linkTo(methodOn(UniversityController.class).searchUniversities("", "", "", 0, 5, "name", "asc")).withRel("search").getHref());
 
         return ResponseEntity.ok().headers(headers).body(collectionModel);
     }
