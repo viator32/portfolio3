@@ -2,14 +2,12 @@ package com.example.partneruniversities.client;
 
 import com.example.partneruniversities.model.Module;
 import com.example.partneruniversities.model.University;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.client.Traverson;
-import org.springframework.hateoas.mediatype.hal.Jackson2HalModule;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Component
 public class PartnerUniversitiesClient {
@@ -31,7 +26,6 @@ public class PartnerUniversitiesClient {
     private static final String DISPATCHER_URL = "http://localhost:8080/";
 
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
     private final Traverson traverson;
     private final Map<String, URI> linkCache;
 
@@ -39,7 +33,6 @@ public class PartnerUniversitiesClient {
         this.restTemplate = new RestTemplate();
         this.traverson = new Traverson(URI.create(DISPATCHER_URL), MediaTypes.HAL_JSON);
         this.traverson.setRestOperations(restTemplate);
-        this.objectMapper = new ObjectMapper().registerModule(new Jackson2HalModule());
         this.linkCache = new HashMap<>();
         initializeLinks();
     }
@@ -68,19 +61,21 @@ public class PartnerUniversitiesClient {
                 uri,
                 org.springframework.http.HttpMethod.GET,
                 null,
-                new org.springframework.core.ParameterizedTypeReference<PagedModel<EntityModel<University>>>() {});
-        return response.getBody().getContent().stream().collect(Collectors.toList());
+                new org.springframework.core.ParameterizedTypeReference<>() {
+                });
+        return new ArrayList<>(Objects.requireNonNull(response.getBody()).getContent());
     }
 
-    public EntityModel<University> getUniversityById(Long id) {
-        URI uri = UriComponentsBuilder.fromUri(getLink("universities")).pathSegment("{id}").buildAndExpand(id).toUri();
-        logger.info("Fetching university with ID: {} from URL: {}", id, uri);
-        ResponseEntity<EntityModel<University>> response = restTemplate.exchange(
+    public List<EntityModel<Module>>getAllModules() {
+        URI uri = getLink("modules");
+        logger.info("Fetching all modules from URL: {}", uri);
+        ResponseEntity<PagedModel<EntityModel<Module>>> response = restTemplate.exchange(
                 uri,
                 org.springframework.http.HttpMethod.GET,
                 null,
-                new org.springframework.core.ParameterizedTypeReference<EntityModel<University>>() {});
-        return response.getBody();
+                new org.springframework.core.ParameterizedTypeReference<>() {
+                });
+        return new ArrayList<>(Objects.requireNonNull(response.getBody()).getContent());
     }
 
     public List<EntityModel<University>> searchUniversities(Map<String, String> params) {
@@ -90,21 +85,21 @@ public class PartnerUniversitiesClient {
                 uri,
                 org.springframework.http.HttpMethod.GET,
                 new HttpEntity<>(params),
-                new org.springframework.core.ParameterizedTypeReference<PagedModel<EntityModel<University>>>() {});
-        return response.getBody().getContent().stream().collect(Collectors.toList());
+                new org.springframework.core.ParameterizedTypeReference<>() {
+                });
+        return new ArrayList<>(Objects.requireNonNull(response.getBody()).getContent());
     }
 
-    public List<EntityModel<Module>> getAllModules() {
-        URI uri = getLink("modules");
-        logger.info("Fetching all modules from URL: {}", uri);
-        ResponseEntity<PagedModel<EntityModel<Module>>> response = restTemplate.exchange(
+    public EntityModel<University> getUniversityById(Long id) {
+        URI uri = UriComponentsBuilder.fromUri(getLink("universities")).pathSegment("{id}").buildAndExpand(id).toUri();
+        logger.info("Fetching university with ID: {} from URL: {}", id, uri);
+        ResponseEntity<EntityModel<University>> response = restTemplate.exchange(
                 uri,
                 org.springframework.http.HttpMethod.GET,
                 null,
-                new org.springframework.core.ParameterizedTypeReference<PagedModel<EntityModel<Module>>>() {});
-        List<EntityModel<Module>> modules = response.getBody().getContent().stream().collect(Collectors.toList());
-        logger.info("Fetched {} modules", modules.size());
-        return modules;
+                new org.springframework.core.ParameterizedTypeReference<>() {
+                });
+        return response.getBody();
     }
 
     public EntityModel<Module> getModuleById(Long id) {
@@ -115,8 +110,9 @@ public class PartnerUniversitiesClient {
                     uri,
                     org.springframework.http.HttpMethod.GET,
                     null,
-                    new org.springframework.core.ParameterizedTypeReference<EntityModel<Module>>() {});
-            logger.info("Fetched module data: {}", response.getBody().getContent().toString());
+                    new org.springframework.core.ParameterizedTypeReference<>() {
+                    });
+            logger.info("Fetched module data: {}", Objects.requireNonNull(Objects.requireNonNull(response.getBody()).getContent()));
             return response.getBody();
         } catch (HttpClientErrorException e) {
             logger.error("Error fetching module: {}", e.getResponseBodyAsString());
@@ -135,7 +131,8 @@ public class PartnerUniversitiesClient {
                     uri,
                     org.springframework.http.HttpMethod.POST,
                     new HttpEntity<>(universityJson, headers),
-                    new org.springframework.core.ParameterizedTypeReference<EntityModel<University>>() {});
+                    new org.springframework.core.ParameterizedTypeReference<>() {
+                    });
             return response.getBody();
         } catch (HttpClientErrorException e) {
             logger.error("Error creating university: {}", e.getResponseBodyAsString());
@@ -188,11 +185,31 @@ public class PartnerUniversitiesClient {
                     uri,
                     org.springframework.http.HttpMethod.POST,
                     new HttpEntity<>(moduleJson, headers),
-                    new org.springframework.core.ParameterizedTypeReference<EntityModel<Module>>() {});
-            logger.info("Created module data: {}", response.getBody().getContent().toString());
+                    new org.springframework.core.ParameterizedTypeReference<>() {
+                    });
+            logger.info("Created module data: {}", Objects.requireNonNull(Objects.requireNonNull(response.getBody()).getContent()));
             return response.getBody();
         } catch (HttpClientErrorException e) {
             logger.error("Error creating module: {}", e.getResponseBodyAsString());
+            throw e;
+        }
+    }
+
+    public EntityModel<Module> updateModule(Long id, String moduleJson) {
+        URI uri = UriComponentsBuilder.fromUri(getLink("modules")).pathSegment("{id}").buildAndExpand(id).toUri();
+        logger.info("Updating module with ID: {} at URL: {}", id, uri);
+        logger.info("Module data: {}", moduleJson);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+        try {
+            restTemplate.exchange(
+                    uri,
+                    org.springframework.http.HttpMethod.PUT,
+                    new HttpEntity<>(moduleJson, headers),
+                    new org.springframework.core.ParameterizedTypeReference<EntityModel<Module>>() {});
+            return getModuleById(id);
+        } catch (HttpClientErrorException e) {
+            logger.error("Error updating module: {}", e.getResponseBodyAsString());
             throw e;
         }
     }
@@ -219,7 +236,8 @@ public class PartnerUniversitiesClient {
                 uri,
                 org.springframework.http.HttpMethod.GET,
                 null,
-                new org.springframework.core.ParameterizedTypeReference<PagedModel<EntityModel<Module>>>() {});
-        return response.getBody().getContent().stream().collect(Collectors.toList());
+                new org.springframework.core.ParameterizedTypeReference<>() {
+                });
+        return new ArrayList<>(Objects.requireNonNull(response.getBody()).getContent());
     }
 }
