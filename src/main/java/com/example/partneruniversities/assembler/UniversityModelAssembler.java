@@ -33,8 +33,12 @@ public class UniversityModelAssembler implements RepresentationModelAssembler<Un
     public @NotNull CollectionModel<EntityModel<University>> toCollectionModel(@NotNull Iterable<? extends University> entities) {
         CollectionModel<EntityModel<University>> universityModels = RepresentationModelAssembler.super.toCollectionModel(entities);
 
-        universityModels.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
-        universityModels.add(linkTo(methodOn(UniversityController.class).searchUniversities("", "", "", 0, 10, "name", "asc")).withRel("search"));
+        // Update to include pagination parameters (defaulting to first page, 10 items per page)
+        int defaultPage = 0;
+        int defaultSize = 10;
+
+        universityModels.add(linkTo(methodOn(UniversityController.class).getAllUniversities(defaultPage, defaultSize)).withSelfRel());
+        universityModels.add(linkTo(methodOn(UniversityController.class).searchUniversities("", "", "", defaultPage, defaultSize, "name", "asc")).withRel("search"));
 
         return universityModels;
     }

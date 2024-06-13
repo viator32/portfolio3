@@ -6,6 +6,8 @@ import com.example.partneruniversities.model.University;
 import com.example.partneruniversities.service.ModuleService;
 import com.example.partneruniversities.service.UniversityService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpHeaders;
@@ -40,15 +42,30 @@ public class UniversityController {
     }
 
     @GetMapping
-    public ResponseEntity<CollectionModel<EntityModel<University>>> getAllUniversities() {
-        List<EntityModel<University>> universities = universityService.findAll().stream()
+    public ResponseEntity<CollectionModel<EntityModel<University>>> getAllUniversities(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<University> universityPage = universityService.findAll(pageable);
+
+        List<EntityModel<University>> universities = universityPage.stream()
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("self", linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel().getHref());
+        CollectionModel<EntityModel<University>> collectionModel = CollectionModel.of(universities,
+                linkTo(methodOn(UniversityController.class).getAllUniversities(page, size)).withSelfRel());
 
-        CollectionModel<EntityModel<University>> collectionModel = CollectionModel.of(universities, linkTo(methodOn(UniversityController.class).getAllUniversities()).withSelfRel());
+        if (universityPage.hasNext()) {
+            collectionModel.add(linkTo(methodOn(UniversityController.class).getAllUniversities(page + 1, size)).withRel("next"));
+        }
+        if (universityPage.hasPrevious()) {
+            collectionModel.add(linkTo(methodOn(UniversityController.class).getAllUniversities(page - 1, size)).withRel("prev"));
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("self", linkTo(methodOn(UniversityController.class).getAllUniversities(page, size)).withSelfRel().getHref());
+
         return ResponseEntity.ok().headers(headers).body(collectionModel);
     }
 

@@ -13,7 +13,7 @@ public class DispatcherAssembler {
 
     public RepresentationModel<?> createDispatcherLinks() {
         RepresentationModel<?> dispatcher = new RepresentationModel<>();
-        dispatcher.add(linkTo(methodOn(UniversityController.class).getAllUniversities()).withRel("universities"));
+        dispatcher.add(linkTo(methodOn(UniversityController.class).getAllUniversities(0, 10 )).withRel("universities"));
         dispatcher.add(linkTo(methodOn(ModuleController.class).getAllModules()).withRel("modules"));
         dispatcher.add(linkTo(methodOn(UniversityController.class).searchUniversities("", "", "", 0, 10, "name", "asc")).withRel("search"));
         return dispatcher;

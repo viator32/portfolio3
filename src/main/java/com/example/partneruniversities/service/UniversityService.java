@@ -27,6 +27,9 @@ public class UniversityService {
     public List<University> findAll() {
         return universityRepository.findAll();
     }
+    public Page<University> findAll(Pageable pageable) {
+        return universityRepository.findAll(pageable);
+    }
 
     public Optional<University> findById(Long id) {
         return universityRepository.findById(id);
