@@ -1,5 +1,7 @@
 # Partner Universities API
 
+This README provides an overview of the API endpoints, example JSON structures for creating and updating resources, and instructions for running the application and testing it with Postman.
+
 This application provides a RESTful API for managing partner universities and their modules. It uses HATEOAS for creating links between resources. 
 Made by Serhii Radkovskyi (Mtr.5121005) as the portfolio assingment for Distributed systems lecture 
 
@@ -250,26 +252,41 @@ Made by Serhii Radkovskyi (Mtr.5121005) as the portfolio assingment for Distribu
     http://localhost:8080/universities/search?name=Test%20University&country=&departmentName=&page=0&size=10&sortBy=name&direction=asc
     ```
 
+Here is the revised instruction for your README file, considering the need to start the server before running the tests to avoid connection refused errors:
+
+---
+
 ## Running the Application
 
-1. **Build the Project**:
-    ```
-    mvn clean install
-    ```
+### Start the Application
 
-2. **Run the Application**:
-    ```
+After the build is complete, you need to start the application. Follow these steps:
+
+1. Open your IDE and wait for all Maven dependencies to be resolved and downloaded.
+2. Locate the `PartnerUniversitiesApplication` class in the `com.example.partneruniversities` package.
+3. Right-click on the `PartnerUniversitiesApplication` class and select `Run` to start the application. Alternatively, you can run the application from the command line using:
+
+    ```sh
     mvn spring-boot:run
     ```
+
+This will start an embedded Tomcat server on `localhost` with port `8080` and set up an in-memory database.
+
+### Run the Tests
+
+To run the integration tests, follow these steps:
+
+1. Ensure the application server is running by following the steps in the "Start the Application" section above.
+2. Navigate to the test folder in your IDE: `src/test/java/com/example/partneruniversities/`.
+3. Find the `PartnerUniversitiesClientIntegrationTest` class.
+4. Right-click on the `PartnerUniversitiesClientIntegrationTest` class and select `Run` to execute the tests.
+
+The tests will interact with the running server, sending requests to the application and verifying the responses.
+
+For a more detailed explanation and visual guide, refer to the instructional video provided.
 
 ## Testing with Postman
 
 Use the provided JSON structures to test the API endpoints via Postman. You can create, retrieve, update, and delete resources by sending requests to the appropriate endpoints.
 
-### Postman Collection
-
-You can create a Postman collection with the above endpoints and example JSON structures to facilitate testing.
-
 ---
-
-This README provides an overview of the API endpoints, example JSON structures for creating and updating resources, and instructions for running the application and testing it with Postman.
