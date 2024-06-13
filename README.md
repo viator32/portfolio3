@@ -5,7 +5,6 @@ This README provides an overview of the API endpoints, example JSON structures f
 This application provides a RESTful API for managing partner universities and their modules. It uses HATEOAS for creating links between resources. 
 Made by Serhii Radkovskyi (Mtr.5121005) as the portfolio assingment for Distributed systems lecture 
 
----
 
 ## Running the Application
 
