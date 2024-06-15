@@ -30,10 +30,36 @@ To run the integration tests, follow these steps:
 2. Navigate to the test folder in your IDE: `src/test/java/com/example/partneruniversities/`.
 3. Find the `PartnerUniversitiesClientIntegrationTest` class.
 4. Right-click on the `PartnerUniversitiesClientIntegrationTest` class and select `Run` to execute the tests.
+5. Alternatively, you can run the application from the command line using:
+
+    ```sh
+    mvn verify
+    ```
+But make sure that the localhost server is running, otherwise the tests will fail due to a refused connection error. 
 
 The tests will interact with the running server, sending requests to the application and verifying the responses.
 
 For a more detailed explanation and visual guide, refer to the instructional video provided.
+
+
+Sure, here is the markdown format for your README file:
+
+## How to Build and Start the Docker Container
+
+1. **Build the Docker Image**:
+   Open your terminal, navigate to the directory containing your Dockerfile, and run:
+   ```sh
+   docker build -t partner-universities-management .
+   ```
+
+2. **Run the Docker Container**:
+   After the image is built, run the container with:
+   ```sh
+   docker run -p 8080:8080 partner-universities-management
+   ```
+
+Your application should now be running inside the Docker container and accessible on port 8080.
+
 
 ## Testing with Postman
 
