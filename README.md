@@ -42,8 +42,6 @@ The tests will interact with the running server, sending requests to the applica
 For a more detailed explanation and visual guide, refer to the instructional video provided.
 
 
-Sure, here is the markdown format for your README file:
-
 ## How to Build and Start the Docker Container
 
 1. **Build the Docker Image**:
@@ -63,7 +61,7 @@ Your application should now be running inside the Docker container and accessibl
 
 ## Testing with Postman
 
-Use the provided JSON structures to test the API endpoints via Postman. You can create, retrieve, update, and delete resources by sending requests to the appropriate endpoints.
+### Use the provided JSON structures to test the API endpoints via Postman. You can create, retrieve, update, and delete resources by sending requests to the appropriate endpoints.
 
 --- 
 
@@ -115,9 +113,7 @@ Use the provided JSON structures to test the API endpoints via Postman. You can 
             "self": {
                 "href": "http://localhost:8080/universities"
             },
-            "search": {
-                "href": "http://localhost:8080/universities/search"
-            }
+            
         }
     }
     ```
