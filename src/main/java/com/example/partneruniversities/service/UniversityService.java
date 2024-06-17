@@ -23,10 +23,6 @@ public class UniversityService {
         this.universityRepository = universityRepository;
         this.moduleService = moduleService;
     }
-
-    public List<University> findAll() {
-        return universityRepository.findAll();
-    }
     public Page<University> findAll(Pageable pageable) {
         return universityRepository.findAll(pageable);
     }
